@@ -2,9 +2,11 @@
 #include "StringHelpers.h"
 #include "Game.h"
 #include "EntityManager.h"
+#include "CollisionManger.h"
 
 const float Game::PlayerSpeed = 100.f;
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
+CollisionManger collision;
 
 Game::Game()
 	: mWindow(sf::VideoMode(840, 600), "Donkey Kong 1981", sf::Style::Close)
@@ -18,6 +20,7 @@ Game::Game()
 	, mIsMovingDown(false)
 	, mIsMovingRight(false)
 	, mIsMovingLeft(false)
+	,jump(false)
 {
 	mWindow.setFramerateLimit(160);
 
@@ -75,6 +78,8 @@ Game::Game()
 	player->m_type = EntityType::player;
 	player->m_size = mTexture.getSize();
 	player->m_position = mPlayer.getPosition();
+
+	//std::cout << player->m_position.y << std::endl;
 	EntityManager::m_Entities.push_back(player);
 
 	// Draw Statistic Font 
@@ -131,15 +136,37 @@ void Game::processEvents()
 
 void Game::update(sf::Time elapsedTime)
 {
+	std::shared_ptr<Entity> entity;
+	EntityManager em;
+	entity = em.GetPlayer();
+
+	int delta_x = abs(entity->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
+	int delta_y = abs(entity->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
+
+	//std::cout << delta_y << std::endl;
+	
 	sf::Vector2f movement(0.f, 0.f);
-	if (mIsMovingUp)
-		movement.y -= PlayerSpeed;
-	if (mIsMovingDown)
+	if (mIsMovingUp && 	collision.isCollision(entity->m_sprite, _Echelle[3]) == true) {
+				movement.y -= PlayerSpeed;
+	}
+	if (mIsMovingDown && collision.isCollision(entity->m_sprite, _Echelle[3]) == true) {
 		movement.y += PlayerSpeed;
-	if (mIsMovingLeft)
+	}
+	if (mIsMovingLeft) {
 		movement.x -= PlayerSpeed;
-	if (mIsMovingRight)
+	}
+	if (mIsMovingRight) {
 		movement.x += PlayerSpeed;
+	}
+	if (jump) {
+
+			//movement.y += PlayerSpeed;
+		
+			//movement.y -= PlayerSpeed;
+
+	}
+
+	//entity->m_sprite.setPosition(entity->m_sprite.getPosition().x, _Block[5][5].getPosition().y);
 
 	for (std::shared_ptr<Entity> entity : EntityManager::m_Entities)
 	{
@@ -152,7 +179,6 @@ void Game::update(sf::Time elapsedTime)
 		{
 			continue;
 		}
-
 		entity->m_sprite.move(movement * elapsedTime.asSeconds());
 	}
 }
@@ -194,6 +220,8 @@ void Game::updateStatistics(sf::Time elapsedTime)
 	// Handle collision
 	//
 
+
+
 	if (mStatisticsUpdateTime >= sf::seconds(0.050f))
 	{
 		// Handle collision weapon enemies
@@ -202,10 +230,13 @@ void Game::updateStatistics(sf::Time elapsedTime)
 
 void Game::handlePlayerInput(sf::Keyboard::Key key, bool isPressed)
 {
-	if (key == sf::Keyboard::Up)
+	if (key == sf::Keyboard::Up) {
 		mIsMovingUp = isPressed;
-	else if (key == sf::Keyboard::Down)
+	}
+	else if (key == sf::Keyboard::Down) {
 		mIsMovingDown = isPressed;
+
+	}
 	else if (key == sf::Keyboard::Left)
 		mIsMovingLeft = isPressed;
 	else if (key == sf::Keyboard::Right)
@@ -213,5 +244,8 @@ void Game::handlePlayerInput(sf::Keyboard::Key key, bool isPressed)
 
 	if (key == sf::Keyboard::Space)
 	{
+		jump = isPressed;
 	}
 }
+
+

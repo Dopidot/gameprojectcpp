@@ -16,6 +16,7 @@ private:
 	void processEvents();
 	void update(sf::Time elapsedTime);
 	void render();
+	//void col(std::shared_ptr<Entity> entity);
 
 	void updateStatistics(sf::Time elapsedTime);
 	void handlePlayerInput(sf::Keyboard::Key key, bool isPressed);
@@ -36,6 +37,7 @@ private:
 	bool mIsMovingDown;
 	bool mIsMovingRight;
 	bool mIsMovingLeft;
+	bool jump;
 
 	sf::Texture	_TextureEchelle;
 	sf::Sprite	_Echelle[ECHELLE_COUNT];

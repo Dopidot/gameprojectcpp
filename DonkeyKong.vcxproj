@@ -23,7 +23,7 @@
     <ProjectGuid>{3C402713-6869-4381-B61C-D0A8269A721E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>DonkeyKong</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -72,13 +72,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(IncludePath);D:\Dev\SFML\SFML-2.5.1\Include</IncludePath>
-    <LibraryPath>$(LibraryPath);D:\Dev\SFML\SFML-2.5.1\Lib</LibraryPath>
+    <IncludePath>$(IncludePath);D:\SFML-2.5.1\include</IncludePath>
+    <LibraryPath>$(LibraryPath);D:\SFML-2.5.1\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(IncludePath);D:\Dev\SFML\SFML-2.5.1\Include</IncludePath>
-    <LibraryPath>$(LibraryPath);D:\Dev\SFML\SFML-2.5.1\Lib</LibraryPath>
+    <IncludePath>$(IncludePath);D:\SFML-2.5.1\include\SFML</IncludePath>
+    <LibraryPath>$(LibraryPath);D:\SFML-2.5.1\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -155,6 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CollisionManger.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityManager.h" />
     <ClInclude Include="Game.h" />
@@ -162,6 +163,7 @@
     <ClInclude Include="StringHelpers.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CollisionManger.cpp" />
     <ClCompile Include="DonkeyKong.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="EntityManager.cpp" />
