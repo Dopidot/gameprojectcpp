@@ -1,18 +1,18 @@
 #include "pch.h"
-#include "CollisionManger.h"
+#include "CollisionManager.h"
 
 
 
-CollisionManger::CollisionManger()
+CollisionManager::CollisionManager()
 {
 }
 
 
-CollisionManger::~CollisionManger()
+CollisionManager::~CollisionManager()
 {
 }
 
-bool CollisionManger::isCollision(sf::Sprite const& mainCharacter, sf::Sprite const& object)
+bool CollisionManager::isCollision(sf::Sprite const& mainCharacter, sf::Sprite const& object)
 {
 	//Character 
 	int position_x_character = mainCharacter.getPosition().x;

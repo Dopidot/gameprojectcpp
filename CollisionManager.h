@@ -1,11 +1,11 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
-class CollisionManger
+class CollisionManager
 {
 public:
-	CollisionManger();
-	~CollisionManger();
+	CollisionManager();
+	~CollisionManager();
 public:
 	bool isCollision(sf::Sprite const& mainCharacter , sf::Sprite const& objcetc);
 

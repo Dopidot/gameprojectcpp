@@ -2,11 +2,11 @@
 #include "StringHelpers.h"
 #include "Game.h"
 #include "EntityManager.h"
-#include "CollisionManger.h"
+#include "CollisionManager.h"
 
 const float Game::PlayerSpeed = 100.f;
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
-CollisionManger collision;
+CollisionManager collision;
 
 Game::Game()
 	: mWindow(sf::VideoMode(840, 600), "Donkey Kong 1981", sf::Style::Close)
