@@ -48,11 +48,18 @@ Game::Game()
 	// Draw Echelles
 
 	_TextureEchelle.loadFromFile("Media/Textures/Echelle.png");
+	std::default_random_engine eng;
+	eng.seed(time(0));
+
+	int minX = 100 + 70;
+	int maxX = 700;
 
 	for (int i = 0; i < ECHELLE_COUNT; i++)
 	{
+		int randX = eng() % (maxX - minX) + minX;
+
 		_Echelle[i].setTexture(_TextureEchelle);
-		_Echelle[i].setPosition(100.f + 70.f * (i + 1), 0.f + BLOCK_SPACE * (i + 1) + _sizeBlock.y );
+		_Echelle[i].setPosition(randX, 0.f + BLOCK_SPACE * (i + 1) + _sizeBlock.y);
 
 		std::shared_ptr<Entity> se = std::make_shared<Entity>();
 		se->m_sprite = _Echelle[i];
