@@ -51,12 +51,30 @@ Game::Game()
 	std::default_random_engine eng;
 	eng.seed(time(0));
 
-	int minX = 100 + 70;
+	int minX;
 	int maxX = 700;
+	int randX = 0;
 
 	for (int i = 0; i < ECHELLE_COUNT; i++)
 	{
-		int randX = eng() % (maxX - minX) + minX;
+		int oldPosX = randX;
+
+		if (i == 3)
+		{
+			minX = 270; // for the first floor, move away the ladder from mario
+		}
+		else
+		{
+			minX = 170;
+		}
+
+		randX = eng() % (maxX - minX) + minX;
+
+		if (std::abs(randX - oldPosX) < 100) // if two ladders are close
+		{
+			randX = randX + std::abs(randX - oldPosX) + 100;
+			randX = randX >= maxX ? minX : randX;
+		}
 
 		_Echelle[i].setTexture(_TextureEchelle);
 		_Echelle[i].setPosition(randX, 0.f + BLOCK_SPACE * (i + 1) + _sizeBlock.y);
