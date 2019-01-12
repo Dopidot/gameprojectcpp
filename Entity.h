@@ -5,7 +5,8 @@ enum EntityType
 	player,
 	block,
 	echelle,
-	ennemi
+	ennemi,
+	drapeau
 };
 
 class Entity

@@ -39,6 +39,7 @@ private:
 	bool mIsMovingRight;
 	bool mIsMovingLeft;
 	bool jump;
+	bool dirEnnemi[ENNEMI_COUNT];
 
 	sf::Texture	_TextureEchelle;
 	sf::Sprite	_Echelle[ECHELLE_COUNT];
@@ -48,8 +49,12 @@ private:
 	sf::Sprite	_Block[BLOCK_COUNT_X][BLOCK_COUNT_Y];
 	sf::Texture	_TextureWeapon;
 	sf::Sprite	_Weapon;
+	sf::Texture	_TextureFlag;
+	sf::Sprite	_Flag;
+
 	sf::Vector2u _sizeBlock;
 	sf::Vector2u _sizeEnnemi;
 	sf::Vector2u _sizeMario;
+	sf::Vector2u _sizeFlag;
 };
 

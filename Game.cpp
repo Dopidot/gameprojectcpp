@@ -7,6 +7,7 @@
 const float Game::PlayerSpeed = 100.f;
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
 CollisionManager collision;
+std::default_random_engine eng;
 
 Game::Game()
 	: mWindow(sf::VideoMode(840, 600), "Donkey Kong 1981", sf::Style::Close)
@@ -23,6 +24,8 @@ Game::Game()
 	,jump(false)
 {
 	mWindow.setFramerateLimit(160);
+	eng.seed(time(0));
+	
 
 	// Draw blocks
 
@@ -48,8 +51,6 @@ Game::Game()
 	// Draw Echelles
 
 	_TextureEchelle.loadFromFile("Media/Textures/Echelle.png");
-	std::default_random_engine eng;
-	eng.seed(time(0));
 
 	int minX;
 	int maxX = 700;
@@ -88,13 +89,14 @@ Game::Game()
 	}
 
 	// Draw Ennemi
-	_TextureEnnemi.loadFromFile("Media/Textures/Piece.png");
+
+	_TextureEnnemi.loadFromFile("Media/Textures/Goomba_small.png");
 	_sizeEnnemi = _TextureEnnemi.getSize();
 	for (int i = 0; i < ENNEMI_COUNT; i++)
 	{
 		_Ennemi[i].setTexture(_TextureEnnemi);
 
-		int initX = 100.f + 70.f ;
+		int initX = 100.f + 70.f;
 
 		int initY = BLOCK_SPACE * (i / 2 + 2) - _sizeEnnemi.y;
 		if (i % 2) {
@@ -110,6 +112,25 @@ Game::Game()
 		enn->m_position = _Ennemi[i].getPosition();
 		EntityManager::m_Entities.push_back(enn);
 	}
+
+	// Draw Flag
+
+	_TextureFlag.loadFromFile("Media/Textures/drapeau_small.png");
+	_sizeFlag = _TextureFlag.getSize();
+	_Flag.setTexture(_TextureFlag);
+	sf::Vector2f posFlag;
+	posFlag.x = eng() % (700 - 170) + 170;
+	posFlag.y = BLOCK_SPACE * 1 - _sizeFlag.y;
+
+	_Flag.setPosition(posFlag);
+
+	std::shared_ptr<Entity> flag = std::make_shared<Entity>();
+	flag->m_sprite = _Flag;
+	flag->m_type = EntityType::drapeau;
+	flag->m_size = _TextureFlag.getSize();
+	flag->m_position = _Flag.getPosition();
+
+	EntityManager::m_Entities.push_back(flag);
 
 
 	// Draw Mario
@@ -238,7 +259,7 @@ void Game::update(sf::Time elapsedTime)
 			continue;
 		}
 
-		if (entity->m_type != EntityType::player  && entity->m_type != EntityType::ennemi)
+		if (entity->m_type != EntityType::player && entity->m_type != EntityType::ennemi)
 		{
 			continue;
 		}
@@ -247,9 +268,16 @@ void Game::update(sf::Time elapsedTime)
 		}
 
 		if (entity->m_type == EntityType::ennemi) {
-			if (entity->m_sprite.getPosition().x > 600) {
+			if (entity->m_sprite.getPosition().x >= 660.f + _sizeBlock.x - _sizeEnnemi.x)
+				dirEnnemi[ennemiIndex] = true;
+			if (entity->m_sprite.getPosition().x <= 170.f)
+				dirEnnemi[ennemiIndex] = false;
+
+
+			if (dirEnnemi[ennemiIndex]) { // go to left
 				movementEnnemi[ennemiIndex].x -= 90;
-			}else if (entity->m_sprite.getPosition().x < 100) {
+			}
+			else { // go to right
 				movementEnnemi[ennemiIndex].x += 90;
 			}
 
