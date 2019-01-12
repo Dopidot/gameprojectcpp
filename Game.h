@@ -1,6 +1,7 @@
 #pragma once
 
 #define ECHELLE_COUNT 4
+#define ENNEMI_COUNT 6
 #define BLOCK_COUNT_X 8
 #define BLOCK_COUNT_Y 5
 #define BLOCK_SPACE 110.f
@@ -42,10 +43,13 @@ private:
 	sf::Texture	_TextureEchelle;
 	sf::Sprite	_Echelle[ECHELLE_COUNT];
 	sf::Texture	_TextureBlock;
+	sf::Sprite	_Ennemi[ENNEMI_COUNT];
+	sf::Texture	_TextureEnnemi;
 	sf::Sprite	_Block[BLOCK_COUNT_X][BLOCK_COUNT_Y];
 	sf::Texture	_TextureWeapon;
 	sf::Sprite	_Weapon;
 	sf::Vector2u _sizeBlock;
+	sf::Vector2u _sizeEnnemi;
 	sf::Vector2u _sizeMario;
 };
 

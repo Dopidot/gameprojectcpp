@@ -87,6 +87,31 @@ Game::Game()
 		EntityManager::m_Entities.push_back(se);
 	}
 
+	// Draw Ennemi
+	_TextureEnnemi.loadFromFile("Media/Textures/Piece.png");
+	_sizeEnnemi = _TextureEnnemi.getSize();
+	for (int i = 0; i < ENNEMI_COUNT; i++)
+	{
+		_Ennemi[i].setTexture(_TextureEnnemi);
+
+		int initX = 100.f + 70.f ;
+
+		int initY = BLOCK_SPACE * (i / 2 + 2) - _sizeEnnemi.y;
+		if (i % 2) {
+			initX += 530.f;
+		}
+
+		_Ennemi[i].setPosition(initX, initY);
+
+		std::shared_ptr<Entity> enn = std::make_shared<Entity>();
+		enn->m_sprite = _Ennemi[i];
+		enn->m_type = EntityType::ennemi;
+		enn->m_size = _TextureEnnemi.getSize();
+		enn->m_position = _Ennemi[i].getPosition();
+		EntityManager::m_Entities.push_back(enn);
+	}
+
+
 	// Draw Mario
 
 	mTexture.loadFromFile("Media/Textures/Mario_small_transparent.png"); // Mario_small.png");
@@ -171,11 +196,22 @@ void Game::update(sf::Time elapsedTime)
 	//std::cout << delta_y << std::endl;
 	
 	sf::Vector2f movement(0.f, 0.f);
-	if (mIsMovingUp && 	collision.isCollision(entity->m_sprite, _Echelle[3]) == true) {
+	sf::Vector2f movementEnnemi[ENNEMI_COUNT];
+	
+	// manual imput
+	if (mIsMovingUp) {
+		for (int i = 0; i < ECHELLE_COUNT; i++) {
+			if (collision.isCollision(entity->m_sprite, _Echelle[i], _sizeBlock.y)) {
 				movement.y -= PlayerSpeed;
+			}
+		}
 	}
-	if (mIsMovingDown && collision.isCollision(entity->m_sprite, _Echelle[3]) == true) {
-		movement.y += PlayerSpeed;
+	if (mIsMovingDown) {
+		for (int i = 0; i < ECHELLE_COUNT; i++) {
+			if (collision.isCollision(entity->m_sprite, _Echelle[i], _sizeBlock.y)) {
+				movement.y += PlayerSpeed;
+			}
+		}
 	}
 	if (mIsMovingLeft) {
 		movement.x -= PlayerSpeed;
@@ -191,8 +227,10 @@ void Game::update(sf::Time elapsedTime)
 
 	}
 
+
 	//entity->m_sprite.setPosition(entity->m_sprite.getPosition().x, _Block[5][5].getPosition().y);
 
+	int ennemiIndex = 0;
 	for (std::shared_ptr<Entity> entity : EntityManager::m_Entities)
 	{
 		if (entity->m_enabled == false)
@@ -200,11 +238,25 @@ void Game::update(sf::Time elapsedTime)
 			continue;
 		}
 
-		if (entity->m_type != EntityType::player)
+		if (entity->m_type != EntityType::player  && entity->m_type != EntityType::ennemi)
 		{
 			continue;
 		}
-		entity->m_sprite.move(movement * elapsedTime.asSeconds());
+		if (entity->m_type == EntityType::player) {
+			entity->m_sprite.move(movement * elapsedTime.asSeconds());
+		}
+
+		if (entity->m_type == EntityType::ennemi) {
+			if (entity->m_sprite.getPosition().x > 600) {
+				movementEnnemi[ennemiIndex].x -= 90;
+			}else if (entity->m_sprite.getPosition().x < 100) {
+				movementEnnemi[ennemiIndex].x += 90;
+			}
+
+			entity->m_sprite.move(movementEnnemi[ennemiIndex] * elapsedTime.asSeconds());
+			ennemiIndex++;
+		}
+		
 	}
 }
 
