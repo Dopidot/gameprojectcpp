@@ -12,29 +12,28 @@ CollisionManager::~CollisionManager()
 {
 }
 
-bool CollisionManager::isCollision(sf::Sprite const& mainCharacter, sf::Sprite const& object)
+bool CollisionManager::isCollision(sf::Sprite const& mainCharacter, sf::Sprite const& object, int stairGap)
 {
 	//Character 
-	int position_x_character = mainCharacter.getPosition().x;
-	int position_y_character = mainCharacter.getPosition().y;
+	int position_x1_character = mainCharacter.getPosition().x;
+	int position_y1_character = mainCharacter.getPosition().y;
 
-	int width_character = mainCharacter.getLocalBounds().width;
-	int heigth_character = mainCharacter.getGlobalBounds().height;
-
+	int position_x2_character = position_x1_character + mainCharacter.getLocalBounds().width;
+	int position_y2_character = position_y1_character + mainCharacter.getLocalBounds().height;
 
 	//Object
-	int position_x_object = object.getPosition().x;
-	int position_y_object = object.getPosition().y;
+	int position_x1_object = object.getPosition().x;
+	int position_y1_object = object.getPosition().y;
 
-	int width_object = object.getLocalBounds().width;
-	int heigth_object = object.getGlobalBounds().height;
-
-
+	int position_x2_object = position_x1_object + object.getLocalBounds().width;
+	int position_y2_object = position_y1_object + object.getLocalBounds().height;
+	
 	if (
-		position_x_character >= (position_x_object + width_character) ||
-		(position_x_character + width_character) <= position_x_object ||
-		position_y_character >= (position_y_object + heigth_object) ||
-		(position_y_character + heigth_character) <= heigth_object)
+		position_x1_character >= position_x2_object ||
+		position_x2_character <= position_x1_object ||
+		position_y1_character >= position_y2_object  ||
+		position_y2_character <= position_y1_object - stairGap
+		)
 	{
 		
 		return false;
