@@ -8,6 +8,7 @@ const float Game::PlayerSpeed = 100.f;
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
 CollisionManager collision;
 std::default_random_engine eng;
+int gameMode = 0;
 
 Game::Game()
 	: mWindow(sf::VideoMode(840, 600), "Donkey Kong 1981", sf::Style::Close)
@@ -26,7 +27,18 @@ Game::Game()
 	mWindow.setFramerateLimit(160);
 	eng.seed(time(0));
 	
+	if (gameMode == 0) // menu
+	{
 
+	}
+	else if (gameMode == 1) // jeu
+	{
+
+	}
+	else if (gameMode == 2) // ecran fin
+	{
+
+	}
 	// Draw blocks
 
 	_TextureBlock.loadFromFile("Media/Textures/Block.png");
@@ -88,7 +100,7 @@ Game::Game()
 		EntityManager::m_Entities.push_back(se);
 	}
 
-	// Draw Ennemi
+	// Draw Ennemis
 
 	_TextureEnnemi.loadFromFile("Media/Textures/Goomba_small.png");
 	_sizeEnnemi = _TextureEnnemi.getSize();
@@ -118,10 +130,10 @@ Game::Game()
 	_TextureFlag.loadFromFile("Media/Textures/drapeau_small.png");
 	_sizeFlag = _TextureFlag.getSize();
 	_Flag.setTexture(_TextureFlag);
+
 	sf::Vector2f posFlag;
 	posFlag.x = eng() % (700 - 170) + 170;
-	posFlag.y = BLOCK_SPACE * 1 - _sizeFlag.y;
-
+	posFlag.y = BLOCK_SPACE - _sizeFlag.y;
 	_Flag.setPosition(posFlag);
 
 	std::shared_ptr<Entity> flag = std::make_shared<Entity>();
@@ -213,6 +225,7 @@ void Game::update(sf::Time elapsedTime)
 
 	int delta_x = abs(entity->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
 	int delta_y = abs(entity->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
+	int pos_player_x = entity->m_sprite.getPosition().x;
 
 	//std::cout << delta_y << std::endl;
 	
@@ -234,11 +247,19 @@ void Game::update(sf::Time elapsedTime)
 			}
 		}
 	}
-	if (mIsMovingLeft) {
-		movement.x -= PlayerSpeed;
+	if (mIsMovingLeft) 
+	{
+		if (pos_player_x > 170)
+		{
+			movement.x -= PlayerSpeed;
+		}
 	}
-	if (mIsMovingRight) {
-		movement.x += PlayerSpeed;
+	if (mIsMovingRight) 
+	{
+		if (pos_player_x < 685)
+		{
+			movement.x += PlayerSpeed;
+		}
 	}
 	if (jump) {
 
@@ -249,9 +270,8 @@ void Game::update(sf::Time elapsedTime)
 	}
 
 
-	//entity->m_sprite.setPosition(entity->m_sprite.getPosition().x, _Block[5][5].getPosition().y);
-
 	int ennemiIndex = 0;
+
 	for (std::shared_ptr<Entity> entity : EntityManager::m_Entities)
 	{
 		if (entity->m_enabled == false)
@@ -340,13 +360,13 @@ void Game::handlePlayerInput(sf::Keyboard::Key key, bool isPressed)
 	}
 	else if (key == sf::Keyboard::Down) {
 		mIsMovingDown = isPressed;
-
 	}
-	else if (key == sf::Keyboard::Left)
+	else if (key == sf::Keyboard::Left) {
 		mIsMovingLeft = isPressed;
-	else if (key == sf::Keyboard::Right)
+	}
+	else if (key == sf::Keyboard::Right) {
 		mIsMovingRight = isPressed;
-
+	}
 	if (key == sf::Keyboard::Space)
 	{
 		jump = isPressed;
