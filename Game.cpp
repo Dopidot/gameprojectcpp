@@ -3,12 +3,14 @@
 #include "Game.h"
 #include "EntityManager.h"
 #include "CollisionManager.h"
+#include "Player.h"
 
 const float Game::PlayerSpeed = 100.f;
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
 CollisionManager collision;
 std::default_random_engine eng;
 int gameMode = 0;
+int jumpState = JumpState::notActivated;
 
 Game::Game()
 	: mWindow(sf::VideoMode(840, 600), "Donkey Kong 1981", sf::Style::Close)
@@ -147,7 +149,17 @@ Game::Game()
 
 	// Draw Mario
 
+
+	//sf::IntRect rectSourceSprite(10, 10, 50, 50);
+	//sf::Sprite sprite(texture, rectSourceSprite);
+
 	mTexture.loadFromFile("Media/Textures/Mario_small_transparent.png"); // Mario_small.png");
+	//mTexture.loadFromFile("Media/Textures/Mario_animation.png"); // Mario_small.png");
+	//sf::IntRect rectSourceSpriteTemp(0, 0, 160, 140);
+	//sf::Sprite sprite(mTexture, rectSourceSpriteTemp);
+	//mPlayer = sprite;
+	//rectSourceSprite = rectSourceSpriteTemp;
+																 //_sizeMario = mTexture.getSize();
 	_sizeMario = mTexture.getSize();
 	mPlayer.setTexture(mTexture);
 	sf::Vector2f posMario;
@@ -176,10 +188,27 @@ Game::Game()
 
 void Game::run()
 {
+	//sf::Clock clockTest;
 	sf::Clock clock;
 	sf::Time timeSinceLastUpdate = sf::Time::Zero;
 	while (mWindow.isOpen())
 	{
+		/*if (clockTest.getElapsedTime().asSeconds() > 1.0f)
+		{
+			if (rectSourceSprite.left == 300)
+			{
+				rectSourceSprite.left = 0;
+			}
+			else
+			{
+				rectSourceSprite.left += 150;
+			}
+
+			mPlayer.setTextureRect(rectSourceSprite);
+			clockTest.restart();
+		}*/
+
+
 		sf::Time elapsedTime = clock.restart();
 		timeSinceLastUpdate += elapsedTime;
 		while (timeSinceLastUpdate > TimePerFrame)
@@ -261,12 +290,13 @@ void Game::update(sf::Time elapsedTime)
 			movement.x += PlayerSpeed;
 		}
 	}
-	if (jump) {
 
-			//movement.y += PlayerSpeed;
-		
-			//movement.y -= PlayerSpeed;
-
+	if (jump) 
+	{
+		if (jumpState == JumpState::notActivated)
+		{
+			jumpState = JumpState::toTheTop;
+		}
 	}
 
 
@@ -283,8 +313,41 @@ void Game::update(sf::Time elapsedTime)
 		{
 			continue;
 		}
-		if (entity->m_type == EntityType::player) {
-			entity->m_sprite.move(movement * elapsedTime.asSeconds());
+		if (entity->m_type == EntityType::player) 
+		{
+			if (jumpState == JumpState::notActivated)
+			{
+				entity->m_sprite.move(movement * elapsedTime.asSeconds());
+			}
+			else
+			{
+				if (jumpState == JumpState::toTheTop)
+				{
+					if (entity->m_sprite.getPosition().y > 460)
+					{
+						movement.y -= PlayerSpeed;
+						entity->m_sprite.move(movement * elapsedTime.asSeconds());
+					}
+					else
+					{
+						jumpState = JumpState::toTheBottom;
+					}
+				}
+				else
+				{
+					if (entity->m_sprite.getPosition().y < 495)
+					{
+						movement.y += PlayerSpeed;
+						entity->m_sprite.move(movement * elapsedTime.asSeconds());
+					}
+					else
+					{
+						jumpState = JumpState::notActivated;
+					}
+				}
+				
+			}
+			
 		}
 
 		if (entity->m_type == EntityType::ennemi) {
@@ -307,6 +370,7 @@ void Game::update(sf::Time elapsedTime)
 		
 	}
 }
+
 
 void Game::render()
 {
