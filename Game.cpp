@@ -10,8 +10,12 @@ const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
 CollisionManager collision;
 std::default_random_engine eng;
 int gameMode = 0;
+
 JumpAction jumpMario;
 int positionYBlocks[BLOCK_COUNT_Y];
+
+int healthPoints = HEALTH_POINTS;
+int godTimeInSec = 0;
 
 float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
 {
@@ -265,14 +269,14 @@ void Game::processEvents()
 
 void Game::update(sf::Time elapsedTime)
 {
-	std::shared_ptr<Entity> entity;
+	std::shared_ptr<Entity> player;
 	EntityManager em;
-	entity = em.GetPlayer();
+	player = em.GetPlayer();
 
-	int delta_x = abs(entity->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
-	int delta_y = abs(entity->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
-	int pos_player_x = entity->m_sprite.getPosition().x;
-	int pos_player_y = entity->m_sprite.getPosition().y;
+	int delta_x = abs(player->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
+	int delta_y = abs(player->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
+	int pos_player_x = player->m_sprite.getPosition().x;
+	int pos_player_y = player->m_sprite.getPosition().y;
 
 	//std::cout << delta_y << std::endl;
 	
@@ -282,14 +286,14 @@ void Game::update(sf::Time elapsedTime)
 	// manual imput
 	if (mIsMovingUp) {
 		for (int i = 0; i < ECHELLE_COUNT; i++) {
-			if (collision.isCollision(entity->m_sprite, _Echelle[i], _sizeBlock.y)) {
+			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y)) {
 				movement.y -= PlayerSpeed;
 			}
 		}
 	}
 	if (mIsMovingDown) {
 		for (int i = 0; i < ECHELLE_COUNT; i++) {
-			if (collision.isCollision(entity->m_sprite, _Echelle[i], _sizeBlock.y)) {
+			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y)) {
 				movement.y += PlayerSpeed;
 			}
 		}
@@ -369,7 +373,26 @@ void Game::update(sf::Time elapsedTime)
 			
 		}
 
-		if (entity->m_type == EntityType::ennemi) {
+		if (entity->m_type == EntityType::ennemi) 
+		{
+			if (godTimeInSec == 0)
+			{
+				if (collision.isCollision(player->m_sprite, entity->m_sprite))
+				{
+					healthPoints--;
+					godTimeInSec = GOD_TIME_IN_SEC;
+
+					std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
+
+					if (healthPoints == 0)
+					{
+						std::cout << "Game Over !" << std::endl;
+						healthPoints = HEALTH_POINTS;
+					}
+				}
+			}
+
+
 			if (entity->m_sprite.getPosition().x >= 660.f + _sizeBlock.x - _sizeEnnemi.x)
 				dirEnnemi[ennemiIndex] = true;
 			if (entity->m_sprite.getPosition().x <= 170.f)
@@ -389,8 +412,6 @@ void Game::update(sf::Time elapsedTime)
 		
 	}
 }
-
-
 
 
 void Game::render()
@@ -424,12 +445,16 @@ void Game::updateStatistics(sf::Time elapsedTime)
 
 		mStatisticsUpdateTime -= sf::seconds(1.0f);
 		mStatisticsNumFrames = 0;
+
+		if (godTimeInSec > 0)
+		{
+			godTimeInSec--;
+		}
 	}
 
 	//
 	// Handle collision
 	//
-
 
 
 	if (mStatisticsUpdateTime >= sf::seconds(0.050f))

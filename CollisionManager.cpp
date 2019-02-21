@@ -27,7 +27,7 @@ bool CollisionManager::isCollision(sf::Sprite const& mainCharacter, sf::Sprite c
 
 	int position_x2_object = position_x1_object + object.getLocalBounds().width;
 	int position_y2_object = position_y1_object + object.getLocalBounds().height;
-	
+
 	if (
 		position_x1_character >= position_x2_object ||
 		position_x2_character <= position_x1_object ||
