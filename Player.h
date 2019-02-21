@@ -7,6 +7,12 @@ enum JumpState
 	toTheBottom
 };
 
+struct JumpAction
+{
+	int state;
+	float initialPosY;
+};
+
 class Player
 {
 public:

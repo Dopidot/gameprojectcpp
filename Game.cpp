@@ -10,7 +10,21 @@ const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
 CollisionManager collision;
 std::default_random_engine eng;
 int gameMode = 0;
-int jumpState = JumpState::notActivated;
+JumpAction jumpMario;
+int positionYBlocks[BLOCK_COUNT_Y];
+
+float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
+{
+	for (int i = 0; i < BLOCK_COUNT_Y; i++)
+	{
+		if (positionYBlocks[i] - sizeYMario >= actualPosY)
+		{
+			return positionYBlocks[i] - sizeYMario;
+		}
+	}
+
+	return actualPosY;
+}
 
 Game::Game()
 	: mWindow(sf::VideoMode(840, 600), "Donkey Kong 1981", sf::Style::Close)
@@ -52,6 +66,8 @@ Game::Game()
 		{
 			_Block[i][j].setTexture(_TextureBlock);
 			_Block[i][j].setPosition(100.f + 70.f * (i + 1), 0.f + BLOCK_SPACE * (j + 1));
+
+			positionYBlocks[j] = _Block[i][j].getPosition().y;
 
 			std::shared_ptr<Entity> se = std::make_shared<Entity>();
 			se->m_sprite = _Block[i][j];
@@ -186,6 +202,7 @@ Game::Game()
 	mStatisticsText.setCharacterSize(10);
 }
 
+
 void Game::run()
 {
 	//sf::Clock clockTest;
@@ -255,6 +272,7 @@ void Game::update(sf::Time elapsedTime)
 	int delta_x = abs(entity->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
 	int delta_y = abs(entity->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
 	int pos_player_x = entity->m_sprite.getPosition().x;
+	int pos_player_y = entity->m_sprite.getPosition().y;
 
 	//std::cout << delta_y << std::endl;
 	
@@ -293,9 +311,10 @@ void Game::update(sf::Time elapsedTime)
 
 	if (jump) 
 	{
-		if (jumpState == JumpState::notActivated)
+		if (jumpMario.state == JumpState::notActivated)
 		{
-			jumpState = JumpState::toTheTop;
+			jumpMario.state = JumpState::toTheTop;
+			jumpMario.initialPosY = getNearestFloor(pos_player_y, positionYBlocks, _sizeMario.y);
 		}
 	}
 
@@ -315,34 +334,34 @@ void Game::update(sf::Time elapsedTime)
 		}
 		if (entity->m_type == EntityType::player) 
 		{
-			if (jumpState == JumpState::notActivated)
+			if (jumpMario.state == JumpState::notActivated)
 			{
 				entity->m_sprite.move(movement * elapsedTime.asSeconds());
 			}
 			else
 			{
-				if (jumpState == JumpState::toTheTop)
+				if (jumpMario.state == JumpState::toTheTop)
 				{
-					if (entity->m_sprite.getPosition().y > 460)
+					if (entity->m_sprite.getPosition().y > (jumpMario.initialPosY - JUMP_HEIGHT))
 					{
 						movement.y -= PlayerSpeed;
 						entity->m_sprite.move(movement * elapsedTime.asSeconds());
 					}
 					else
 					{
-						jumpState = JumpState::toTheBottom;
+						jumpMario.state = JumpState::toTheBottom;
 					}
 				}
 				else
 				{
-					if (entity->m_sprite.getPosition().y < 495)
+					if (entity->m_sprite.getPosition().y < jumpMario.initialPosY)
 					{
 						movement.y += PlayerSpeed;
 						entity->m_sprite.move(movement * elapsedTime.asSeconds());
 					}
 					else
 					{
-						jumpState = JumpState::notActivated;
+						jumpMario.state = JumpState::notActivated;
 					}
 				}
 				
@@ -370,6 +389,8 @@ void Game::update(sf::Time elapsedTime)
 		
 	}
 }
+
+
 
 
 void Game::render()
