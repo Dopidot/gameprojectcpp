@@ -54,10 +54,13 @@ private:
 	sf::Sprite	_Weapon;
 	sf::Texture	_TextureFlag;
 	sf::Sprite	_Flag;
+	sf::Texture	_TextureHeart;
+	sf::Sprite	_Heart[HEALTH_POINTS];
 
 	sf::Vector2u _sizeBlock;
 	sf::Vector2u _sizeEnnemi;
 	sf::Vector2u _sizeMario;
 	sf::Vector2u _sizeFlag;
+	sf::Vector2u _sizeHeart;
 };
 

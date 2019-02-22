@@ -7,6 +7,8 @@
 
 const float Game::PlayerSpeed = 100.f;
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
+const sf::Vector2i screenResolution(840, 600);
+
 CollisionManager collision;
 std::default_random_engine eng;
 int gameMode = 0;
@@ -31,7 +33,7 @@ float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
 }
 
 Game::Game()
-	: mWindow(sf::VideoMode(840, 600), "Donkey Kong 1981", sf::Style::Close)
+	: mWindow(sf::VideoMode(screenResolution.x, screenResolution.y), "Donkey Kong 1981", sf::Style::Close)
 	, mTexture()
 	, mPlayer()
 	, mFont()
@@ -96,7 +98,7 @@ Game::Game()
 
 		if (i == 3)
 		{
-			minX = 270; // for the first floor, move away the ladder from mario
+			minX = 270; // for the bottom floor, move away the ladder from mario
 		}
 		else
 		{
@@ -149,7 +151,7 @@ Game::Game()
 
 	// Draw Flag
 
-	_TextureFlag.loadFromFile("Media/Textures/drapeau_small.png");
+	_TextureFlag.loadFromFile("Media/Textures/Drapeau_small.png");
 	_sizeFlag = _TextureFlag.getSize();
 	_Flag.setTexture(_TextureFlag);
 
@@ -196,6 +198,25 @@ Game::Game()
 
 	//std::cout << player->m_position.y << std::endl;
 	EntityManager::m_Entities.push_back(player);
+
+
+	// Draw Heart
+
+	_TextureHeart.loadFromFile("Media/Textures/Heart_small.png");
+	_sizeHeart = _TextureHeart.getSize();
+
+	for (int i = 0; i < healthPoints; i++)
+	{
+		_Heart[i].setTexture(_TextureHeart);
+		_Heart[i].setPosition(screenResolution.x - ((i + 1) * _sizeHeart.x), 0.f);
+
+		std::shared_ptr<Entity> heart = std::make_shared<Entity>();
+		heart->m_sprite = _Heart[i];
+		heart->m_type = EntityType::heart;
+		heart->m_size = _TextureHeart.getSize();
+		heart->m_position = _Heart[i].getPosition();
+		EntityManager::m_Entities.push_back(heart);
+	}
 
 	// Draw Statistic Font 
 
@@ -322,7 +343,6 @@ void Game::update(sf::Time elapsedTime)
 		}
 	}
 
-
 	int ennemiIndex = 0;
 
 	for (std::shared_ptr<Entity> entity : EntityManager::m_Entities)
@@ -384,10 +404,11 @@ void Game::update(sf::Time elapsedTime)
 
 					std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
 
+					EntityManager::DisableOneHeart(healthPoints);
+
 					if (healthPoints == 0)
 					{
 						std::cout << "Game Over !" << std::endl;
-						healthPoints = HEALTH_POINTS;
 					}
 				}
 			}

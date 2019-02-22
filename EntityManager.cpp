@@ -29,3 +29,32 @@ std::shared_ptr<Entity> EntityManager::GetPlayer()
 
 	return nullptr;
 }
+
+void EntityManager::DisableOneHeart(int healthPoints)
+{
+	int indexOfHeart = -1;
+	int heartsVisible = 0;
+
+	for (int i = 0; i < EntityManager::m_Entities.size(); i++)
+	{
+		if (EntityManager::m_Entities[i]->m_type != EntityType::heart)
+		{
+			continue;
+		}
+
+		if (EntityManager::m_Entities[i]->m_enabled)
+		{
+			if (indexOfHeart == -1)
+			{
+				indexOfHeart = i;
+			}
+
+			heartsVisible++;
+		}
+	}
+
+	if (heartsVisible > healthPoints && indexOfHeart != -1)
+	{
+		EntityManager::m_Entities[indexOfHeart]->m_enabled = false;
+	}
+}
