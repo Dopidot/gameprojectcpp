@@ -11,6 +11,7 @@
 
 enum GameMode
 {
+	initializeMenu,
 	menu,
 	initializeGame,
 	playing
@@ -80,6 +81,11 @@ private:
 	sf::Sprite	_ButtonExit;
 	sf::Texture	_TextureCursor;
 	sf::Sprite	_Cursor;
+	sf::Texture	_TextureVictory;
+	sf::Sprite	_Victory;
+	sf::Texture	_TextureGameOver;
+	sf::Sprite	_GameOver;
+	sf::Sprite	_Love;
 
 	sf::Vector2u _sizeBlock;
 	sf::Vector2u _sizeEnnemi;
@@ -90,5 +96,7 @@ private:
 	sf::Vector2u _sizeButtonNew;
 	sf::Vector2u _sizeButtonExit;
 	sf::Vector2u _sizeCursor;
+	sf::Vector2u _sizeVictory;
+	sf::Vector2u _sizeGameOver;
 };
 

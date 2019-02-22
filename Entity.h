@@ -10,7 +10,8 @@ enum EntityType
 	heart,
 	logo,
 	button,
-	cursor
+	cursor,
+	endScreen
 };
 
 class Entity

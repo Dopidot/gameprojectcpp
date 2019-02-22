@@ -11,8 +11,9 @@ const sf::Vector2i screenResolution(840, 600);
 
 CollisionManager collision;
 std::default_random_engine eng;
-int gameMode = GameMode::menu;
+int gameMode = GameMode::initializeMenu;
 int cursorSelection = ActionMenu::newGame;
+bool isVictory = false;
 
 JumpAction jumpMario;
 int positionYBlocks[BLOCK_COUNT_Y];
@@ -22,7 +23,7 @@ int godTimeInSec = 0;
 
 sf::Clock clockAnimation;
 sf::Clock clockCursor;
-
+sf::Clock clockEndGame;
 
 
 
@@ -142,116 +143,6 @@ Game::Game()
 	eng.seed(time(0));
 	
 
-	// Draw Menu
-
-	_TextureLogo.loadFromFile("Media/Textures/Donkey_kong_menu.png");
-	_sizeLogo = _TextureLogo.getSize();
-	_Logo.setTexture(_TextureLogo);
-
-	int menuPosX = (screenResolution.x / 2) - _sizeLogo.x / 2;
-	int menuPosY = (screenResolution.y / 4) - _sizeLogo.y / 2;
-
-	_Logo.setPosition(menuPosX, menuPosY);
-
-	std::shared_ptr<Entity> logo = std::make_shared<Entity>();
-	logo->m_sprite = _Logo;
-	logo->m_type = EntityType::logo;
-	logo->m_size = _TextureLogo.getSize();
-	logo->m_position = _Logo.getPosition();
-
-	EntityManager::m_Entities.push_back(logo);
-
-
-
-	// Draw Title 
-
-	mFontCustom.loadFromFile("Media/College.ttf");
-	mTitle.setString("Welcome to the New Version of Donkey Kong 1981");
-	mTitle.setFont(mFontCustom);
-	mTitle.setCharacterSize(32);
-
-	int titlePosX = (screenResolution.x / 2) - mTitle.getLocalBounds().width / 2;
-	int titlePosY = (screenResolution.y / 2) - mTitle.getGlobalBounds().height / 2;
-	mTitle.setPosition(titlePosX, titlePosY);
-
-
-
-	// Draw New Game
-
-	_TextureButtonNew.loadFromFile("Media/Textures/Button_newgame_small.png");
-	_sizeButtonNew = _TextureButtonNew.getSize();
-	_ButtonNew.setTexture(_TextureButtonNew);
-
-	int newGamePosX = (screenResolution.x / 2) - _sizeButtonNew.x / 2;
-	int newGamePosY = titlePosY + (mTitle.getPosition().y / 3);
-
-	_ButtonNew.setPosition(newGamePosX, newGamePosY);
-
-	std::shared_ptr<Entity> buttonNew = std::make_shared<Entity>();
-	buttonNew->m_sprite = _ButtonNew;
-	buttonNew->m_type = EntityType::button;
-	buttonNew->m_size = _TextureButtonNew.getSize();
-	buttonNew->m_position = _ButtonNew.getPosition();
-
-	EntityManager::m_Entities.push_back(buttonNew);
-
-
-
-	// Draw Exit
-
-	_TextureButtonExit.loadFromFile("Media/Textures/Button_exit_small.png");
-	_sizeButtonExit = _TextureButtonExit.getSize();
-	_ButtonExit.setTexture(_TextureButtonExit);
-
-	int exitPosX = (screenResolution.x / 2) - _sizeButtonExit.x / 2;
-	int exitPosY = newGamePosY + (mTitle.getPosition().y / 4);
-
-	_ButtonExit.setPosition(exitPosX, exitPosY);
-
-	std::shared_ptr<Entity> buttonExit = std::make_shared<Entity>();
-	buttonExit->m_sprite = _ButtonExit;
-	buttonExit->m_type = EntityType::button;
-	buttonExit->m_size = _TextureButtonExit.getSize();
-	buttonExit->m_position = _ButtonExit.getPosition();
-
-	EntityManager::m_Entities.push_back(buttonExit);
-
-
-
-	// Draw Cursor
-
-	_TextureCursor.loadFromFile("Media/Textures/Cursor_small.png");
-	_sizeCursor = _TextureCursor.getSize();
-	_Cursor.setTexture(_TextureCursor);
-
-	int cursorPosX = _sizeButtonNew.x + _sizeCursor.x;
-	int cursorPosY = newGamePosY + (_sizeCursor.y / 3);
-
-	_Cursor.setPosition(cursorPosX, cursorPosY);
-
-	std::shared_ptr<Entity> cursor = std::make_shared<Entity>();
-	cursor->m_sprite = _Cursor;
-	cursor->m_type = EntityType::cursor;
-	cursor->m_size = _TextureCursor.getSize();
-	cursor->m_position = _Cursor.getPosition();
-
-	EntityManager::m_Entities.push_back(cursor);
-
-
-
-	// Draw info text
-
-	mFont.loadFromFile("Media/Sansation.ttf");
-	mInfo.setString("Press the space key to validate your choice.");
-	mInfo.setFont(mFont);
-	mInfo.setCharacterSize(16);
-
-	int infoPosX = (screenResolution.x / 2) - mInfo.getLocalBounds().width / 2;
-	int infoPosY = screenResolution.y - (mInfo.getLocalBounds().height * 2);
-	mInfo.setPosition(infoPosX, infoPosY);
-		
-
-
 
 	// Draw Statistic Font 
 
@@ -308,8 +199,122 @@ void Game::processEvents()
 
 void Game::update(sf::Time elapsedTime)
 {
-	if (gameMode == GameMode::initializeGame)
+	if (gameMode == GameMode::initializeMenu)
 	{
+		// Draw Menu
+
+		_TextureLogo.loadFromFile("Media/Textures/Donkey_kong.png");
+		_sizeLogo = _TextureLogo.getSize();
+		_Logo.setTexture(_TextureLogo);
+
+		int menuPosX = (screenResolution.x / 2) - _sizeLogo.x / 2;
+		int menuPosY = (screenResolution.y / 4) - _sizeLogo.y / 2;
+
+		_Logo.setPosition(menuPosX, menuPosY);
+
+		std::shared_ptr<Entity> logo = std::make_shared<Entity>();
+		logo->m_sprite = _Logo;
+		logo->m_type = EntityType::logo;
+		logo->m_size = _TextureLogo.getSize();
+		logo->m_position = _Logo.getPosition();
+
+		EntityManager::m_Entities.push_back(logo);
+
+
+
+		// Draw Title 
+
+		mFontCustom.loadFromFile("Media/College.ttf");
+		mTitle.setString("Welcome to the New Version of Donkey Kong 1981");
+		mTitle.setFont(mFontCustom);
+		mTitle.setCharacterSize(32);
+
+		int titlePosX = (screenResolution.x / 2) - mTitle.getLocalBounds().width / 2;
+		int titlePosY = (screenResolution.y / 2) - mTitle.getGlobalBounds().height / 2;
+		mTitle.setPosition(titlePosX, titlePosY);
+
+
+
+		// Draw New Game
+
+		_TextureButtonNew.loadFromFile("Media/Textures/Button_newgame_small.png");
+		_sizeButtonNew = _TextureButtonNew.getSize();
+		_ButtonNew.setTexture(_TextureButtonNew);
+
+		int newGamePosX = (screenResolution.x / 2) - _sizeButtonNew.x / 2;
+		int newGamePosY = titlePosY + (mTitle.getPosition().y / 3);
+
+		_ButtonNew.setPosition(newGamePosX, newGamePosY);
+
+		std::shared_ptr<Entity> buttonNew = std::make_shared<Entity>();
+		buttonNew->m_sprite = _ButtonNew;
+		buttonNew->m_type = EntityType::button;
+		buttonNew->m_size = _TextureButtonNew.getSize();
+		buttonNew->m_position = _ButtonNew.getPosition();
+
+		EntityManager::m_Entities.push_back(buttonNew);
+
+
+
+		// Draw Exit
+
+		_TextureButtonExit.loadFromFile("Media/Textures/Button_exit_small.png");
+		_sizeButtonExit = _TextureButtonExit.getSize();
+		_ButtonExit.setTexture(_TextureButtonExit);
+
+		int exitPosX = (screenResolution.x / 2) - _sizeButtonExit.x / 2;
+		int exitPosY = newGamePosY + (mTitle.getPosition().y / 4);
+
+		_ButtonExit.setPosition(exitPosX, exitPosY);
+
+		std::shared_ptr<Entity> buttonExit = std::make_shared<Entity>();
+		buttonExit->m_sprite = _ButtonExit;
+		buttonExit->m_type = EntityType::button;
+		buttonExit->m_size = _TextureButtonExit.getSize();
+		buttonExit->m_position = _ButtonExit.getPosition();
+
+		EntityManager::m_Entities.push_back(buttonExit);
+
+
+
+		// Draw Cursor
+
+		_TextureCursor.loadFromFile("Media/Textures/Cursor_small.png");
+		_sizeCursor = _TextureCursor.getSize();
+		_Cursor.setTexture(_TextureCursor);
+
+		int cursorPosX = _sizeButtonNew.x + _sizeCursor.x;
+		int cursorPosY = newGamePosY + (_sizeCursor.y / 3);
+
+		_Cursor.setPosition(cursorPosX, cursorPosY);
+
+		std::shared_ptr<Entity> cursor = std::make_shared<Entity>();
+		cursor->m_sprite = _Cursor;
+		cursor->m_type = EntityType::cursor;
+		cursor->m_size = _TextureCursor.getSize();
+		cursor->m_position = _Cursor.getPosition();
+
+		EntityManager::m_Entities.push_back(cursor);
+
+
+
+		// Draw info text
+
+		mFont.loadFromFile("Media/Sansation.ttf");
+		mInfo.setString("Press the space key to validate your choice.");
+		mInfo.setFont(mFont);
+		mInfo.setCharacterSize(16);
+
+		int infoPosX = (screenResolution.x / 2) - mInfo.getLocalBounds().width / 2;
+		int infoPosY = screenResolution.y - (mInfo.getLocalBounds().height * 2);
+		mInfo.setPosition(infoPosX, infoPosY);
+
+		gameMode = GameMode::menu;
+	}
+	else if (gameMode == GameMode::initializeGame)
+	{
+		healthPoints = HEALTH_POINTS;
+
 		// Draw blocks
 
 		_TextureBlock.loadFromFile("Media/Textures/Block.png");
@@ -438,7 +443,6 @@ void Game::update(sf::Time elapsedTime)
 		player->m_size = mTexture.getSize();
 		player->m_position = mPlayer.getPosition();
 
-		//std::cout << player->m_position.y << std::endl;
 		EntityManager::m_Entities.push_back(player);
 
 
@@ -485,6 +489,7 @@ void Game::update(sf::Time elapsedTime)
 				}
 			}
 		}
+
 		if (mIsMovingDown) {
 			for (int i = 0; i < ECHELLE_COUNT; i++) {
 				if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
@@ -492,26 +497,28 @@ void Game::update(sf::Time elapsedTime)
 				}
 			}
 		}
+
 		if (mIsMovingLeft)
 		{
 			if (pos_player_x > 170)
 			{
 				movement.x -= PlayerSpeed;
 
-				if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
+				if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
 					startAnimation(true);
 				}
 
 			}
 		}
+
 		if (mIsMovingRight)
 		{
 			if (pos_player_x < 685)
 			{
 				movement.x += PlayerSpeed;
 
-				if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
+				if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
 					startAnimation();
 				}
@@ -542,7 +549,7 @@ void Game::update(sf::Time elapsedTime)
 				continue;
 			}
 
-			if (entity->m_type != EntityType::player && entity->m_type != EntityType::ennemi)
+			if (entity->m_type != EntityType::player && entity->m_type != EntityType::ennemi && entity->m_type != EntityType::peach)
 			{
 				continue;
 			}
@@ -589,16 +596,14 @@ void Game::update(sf::Time elapsedTime)
 				{
 					if (collision.isCollision(player->m_sprite, entity->m_sprite))
 					{
-						healthPoints--;
-						godTimeInSec = GOD_TIME_IN_SEC;
-
-						std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
-
-						EntityManager::DisableOneHeart(healthPoints);
-
-						if (healthPoints == 0)
+						if (healthPoints > 0)
 						{
-							std::cout << "Game Over !" << std::endl;
+							healthPoints--;
+							godTimeInSec = GOD_TIME_IN_SEC;
+
+							std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
+
+							EntityManager::DisableOneHeart(healthPoints);
 						}
 					}
 				}
@@ -621,14 +626,97 @@ void Game::update(sf::Time elapsedTime)
 				ennemiIndex++;
 			}
 
+			if (entity->m_type == EntityType::peach)
+			{
+				if (!isVictory && collision.isCollision(player->m_sprite, entity->m_sprite))
+				{
+					if (clockEndGame.getElapsedTime().asSeconds() >= 3.0f)
+					{
+						std::cout << "You Win !" << std::endl;
+						isVictory = true;
+
+						// Draw Victory
+
+						_TextureVictory.loadFromFile("Media/Textures/Victory_small.png");
+						_sizeVictory = _TextureVictory.getSize();
+						_Victory.setTexture(_TextureVictory);
+
+						_Victory.setPosition((screenResolution.x / 2) - (_sizeVictory.x / 2), (screenResolution.y / 2) - (_sizeVictory.y / 2));
+
+						std::shared_ptr<Entity> victory = std::make_shared<Entity>();
+						victory->m_sprite = _Victory;
+						victory->m_type = EntityType::endScreen;
+						victory->m_size = _TextureVictory.getSize();
+						victory->m_position = _Victory.getPosition();
+						EntityManager::m_Entities.push_back(victory);
+
+
+
+						// Draw Love
+
+						_Love.setTexture(_TextureHeart);
+						_Love.setPosition(entity->m_sprite.getPosition().x, _sizeHeart.y * 1);
+
+						std::shared_ptr<Entity> love = std::make_shared<Entity>();
+						love->m_sprite = _Love;
+						love->m_type = EntityType::endScreen;
+						love->m_size = _TextureHeart.getSize();
+						love->m_position = _Love.getPosition();
+						EntityManager::m_Entities.push_back(love);
+
+						
+						clockEndGame.restart();
+
+					}
+				}
+			}
+
 		}
+
+		if (isVictory || !isVictory && healthPoints <= 0)
+		{
+			if (healthPoints == 0)
+			{
+				if (clockEndGame.getElapsedTime().asSeconds() >= 3.0f)
+				{
+					std::cout << "Game Over !" << std::endl;
+
+					// Draw Game Over
+
+					_TextureGameOver.loadFromFile("Media/Textures/Game_over_small.png");
+					_sizeGameOver = _TextureGameOver.getSize();
+					_GameOver.setTexture(_TextureGameOver);
+
+					_GameOver.setPosition((screenResolution.x / 2) - (_sizeGameOver.x / 2), (screenResolution.y / 2) - (_sizeGameOver.y / 2));
+
+					std::shared_ptr<Entity> gameOver = std::make_shared<Entity>();
+					gameOver->m_sprite = _GameOver;
+					gameOver->m_type = EntityType::endScreen;
+					gameOver->m_size = _TextureGameOver.getSize();
+					gameOver->m_position = _GameOver.getPosition();
+					EntityManager::m_Entities.push_back(gameOver);
+
+					healthPoints = -1;
+
+					clockEndGame.restart();
+				}
+			}
+			else if (clockEndGame.getElapsedTime().asSeconds() >= 5.0f)
+			{
+				EntityManager::m_Entities.clear();
+				gameMode = GameMode::initializeMenu;
+				clockEndGame.restart();
+				isVictory = false;
+			}
+		}
+
 	}
 	else // menu
 	{
 		// manual imput
 		if (mIsMovingUp) 
 		{
-			if (clockCursor.getElapsedTime().asSeconds() >= 0.3f)
+			if (clockCursor.getElapsedTime().asSeconds() >= 0.2f)
 			{
 				moveCursorMenu();
 				clockCursor.restart();
@@ -637,7 +725,7 @@ void Game::update(sf::Time elapsedTime)
 
 		if (mIsMovingDown) 
 		{
-			if (clockCursor.getElapsedTime().asSeconds() >= 0.3f)
+			if (clockCursor.getElapsedTime().asSeconds() >= 0.2f)
 			{
 				moveCursorMenu();
 				clockCursor.restart();
