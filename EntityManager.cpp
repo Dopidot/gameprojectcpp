@@ -58,3 +58,21 @@ void EntityManager::DisableOneHeart(int healthPoints)
 		EntityManager::m_Entities[indexOfHeart]->m_enabled = false;
 	}
 }
+
+std::shared_ptr<Entity> EntityManager::GetCursor()
+{
+	for (std::shared_ptr<Entity> entity : EntityManager::m_Entities)
+	{
+		if (entity->m_enabled == false)
+		{
+			continue;
+		}
+
+		if (entity->m_type == EntityType::cursor)
+		{
+			return entity;
+		}
+	}
+
+	return nullptr;
+}

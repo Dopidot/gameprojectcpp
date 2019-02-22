@@ -11,7 +11,8 @@ const sf::Vector2i screenResolution(840, 600);
 
 CollisionManager collision;
 std::default_random_engine eng;
-int gameMode = 0;
+int gameMode = GameMode::menu;
+int cursorSelection = ActionMenu::newGame;
 
 JumpAction jumpMario;
 int positionYBlocks[BLOCK_COUNT_Y];
@@ -20,6 +21,10 @@ int healthPoints = HEALTH_POINTS;
 int godTimeInSec = 0;
 
 sf::Clock clockAnimation;
+sf::Clock clockCursor;
+
+
+
 
 float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
 {
@@ -81,6 +86,44 @@ void stopAnimation()
 	clockAnimation.restart();
 }
 
+void moveCursorMenu()
+{
+	std::shared_ptr<Entity> cursor;
+	cursor = EntityManager::GetCursor();
+
+	for (auto entity : EntityManager::m_Entities)
+	{
+		if (entity->m_type != EntityType::button)
+		{
+			continue;
+		}
+
+		if (entity->m_enabled)
+		{
+			float currentPosX = cursor->m_sprite.getPosition().x;
+			float newPosY = entity->m_sprite.getPosition().y + (cursor->m_sprite.getTexture()->getSize().y / 3);
+
+			if (cursor->m_sprite.getPosition().y != newPosY)
+			{
+				cursor->m_sprite.setPosition(currentPosX, newPosY);
+
+				if (cursorSelection == ActionMenu::newGame)
+				{
+					cursorSelection = ActionMenu::exitGame;
+				}
+				else
+				{
+					cursorSelection = ActionMenu::newGame;
+				}
+
+				break;
+			}
+			
+		}
+	}
+}
+
+
 Game::Game()
 	: mWindow(sf::VideoMode(screenResolution.x, screenResolution.y), "Donkey Kong 1981", sf::Style::Close)
 	, mTexture()
@@ -93,172 +136,122 @@ Game::Game()
 	, mIsMovingDown(false)
 	, mIsMovingRight(false)
 	, mIsMovingLeft(false)
-	,jump(false)
+	, mIsSpaceBar(false)
 {
 	mWindow.setFramerateLimit(160);
 	eng.seed(time(0));
 	
-	if (gameMode == 0) // menu
-	{
 
-	}
-	else if (gameMode == 1) // jeu
-	{
+	// Draw Menu
 
-	}
-	else if (gameMode == 2) // ecran fin
-	{
+	_TextureLogo.loadFromFile("Media/Textures/Donkey_kong_menu.png");
+	_sizeLogo = _TextureLogo.getSize();
+	_Logo.setTexture(_TextureLogo);
 
-	}
-	// Draw blocks
+	int menuPosX = (screenResolution.x / 2) - _sizeLogo.x / 2;
+	int menuPosY = (screenResolution.y / 4) - _sizeLogo.y / 2;
 
-	_TextureBlock.loadFromFile("Media/Textures/Block.png");
-	_sizeBlock = _TextureBlock.getSize();
+	_Logo.setPosition(menuPosX, menuPosY);
 
-	for (int i = 0; i < BLOCK_COUNT_X; i++)
-	{
-		for (int j = 0; j < BLOCK_COUNT_Y; j++)
-		{
-			_Block[i][j].setTexture(_TextureBlock);
-			_Block[i][j].setPosition(100.f + 70.f * (i + 1), 0.f + BLOCK_SPACE * (j + 1));
+	std::shared_ptr<Entity> logo = std::make_shared<Entity>();
+	logo->m_sprite = _Logo;
+	logo->m_type = EntityType::logo;
+	logo->m_size = _TextureLogo.getSize();
+	logo->m_position = _Logo.getPosition();
 
-			positionYBlocks[j] = _Block[i][j].getPosition().y;
-
-			std::shared_ptr<Entity> se = std::make_shared<Entity>();
-			se->m_sprite = _Block[i][j];
-			se->m_type = EntityType::block;
-			se->m_size = _TextureBlock.getSize();
-			se->m_position = _Block[i][j].getPosition();
-			EntityManager::m_Entities.push_back(se);
-		}
-	}
-
-	// Draw Ladders
-
-	_TextureEchelle.loadFromFile("Media/Textures/Ladder_small.png");
-
-	int minX;
-	int maxX = 700;
-	int randX = 0;
-
-	for (int i = 0; i < ECHELLE_COUNT; i++)
-	{
-		int oldPosX = randX;
-
-		if (i == 3)
-		{
-			minX = 270; // for the bottom floor, move away the ladder from mario
-		}
-		else
-		{
-			minX = 170;
-		}
-
-		randX = eng() % (maxX - minX) + minX;
-
-		if (std::abs(randX - oldPosX) < 100) // if two ladders are close
-		{
-			randX = randX + std::abs(randX - oldPosX) + 100;
-			randX = randX >= maxX ? minX : randX;
-		}
-
-		_Echelle[i].setTexture(_TextureEchelle);
-		_Echelle[i].setPosition(randX, 0.f + BLOCK_SPACE * (i + 1) + _sizeBlock.y);
-
-		std::shared_ptr<Entity> se = std::make_shared<Entity>();
-		se->m_sprite = _Echelle[i];
-		se->m_type = EntityType::echelle;
-		se->m_size = _TextureEchelle.getSize();
-		se->m_position = _Echelle[i].getPosition();
-		EntityManager::m_Entities.push_back(se);
-	}
-
-	// Draw Ennemis
-
-	_TextureEnnemi.loadFromFile("Media/Textures/Goomba_small.png");
-	_sizeEnnemi = _TextureEnnemi.getSize();
-	for (int i = 0; i < ENNEMI_COUNT; i++)
-	{
-		_Ennemi[i].setTexture(_TextureEnnemi);
-
-		int initX = 100.f + 70.f;
-
-		int initY = BLOCK_SPACE * (i / 2 + 2) - _sizeEnnemi.y;
-		if (i % 2) {
-			initX += 530.f;
-		}
-
-		_Ennemi[i].setPosition(initX, initY);
-
-		std::shared_ptr<Entity> enn = std::make_shared<Entity>();
-		enn->m_sprite = _Ennemi[i];
-		enn->m_type = EntityType::ennemi;
-		enn->m_size = _TextureEnnemi.getSize();
-		enn->m_position = _Ennemi[i].getPosition();
-		EntityManager::m_Entities.push_back(enn);
-	}
-
-	// Draw Flag
-
-	_TextureFlag.loadFromFile("Media/Textures/Drapeau_small.png");
-	_sizeFlag = _TextureFlag.getSize();
-	_Flag.setTexture(_TextureFlag);
-
-	sf::Vector2f posFlag;
-	posFlag.x = eng() % (700 - 170) + 170;
-	posFlag.y = BLOCK_SPACE - _sizeFlag.y;
-	_Flag.setPosition(posFlag);
-
-	std::shared_ptr<Entity> flag = std::make_shared<Entity>();
-	flag->m_sprite = _Flag;
-	flag->m_type = EntityType::drapeau;
-	flag->m_size = _TextureFlag.getSize();
-	flag->m_position = _Flag.getPosition();
-
-	EntityManager::m_Entities.push_back(flag);
+	EntityManager::m_Entities.push_back(logo);
 
 
-	// Draw Mario
 
-	mTexture.loadFromFile("Media/Textures/Mario_animation_small.png"); 
-	sf::IntRect rectSourceSprite(0, 0, 31, 40);
+	// Draw Title 
 
-	mPlayer.setTextureRect(rectSourceSprite);
-	_sizeMario = mTexture.getSize();
-	mPlayer.setTexture(mTexture);
-	sf::Vector2f posMario;
-	posMario.x = 100.f + 70.f;
-	posMario.y = BLOCK_SPACE * 5 - _sizeMario.y;
+	mFontCustom.loadFromFile("Media/College.ttf");
+	mTitle.setString("Welcome to the New Version of Donkey Kong 1981");
+	mTitle.setFont(mFontCustom);
+	mTitle.setCharacterSize(32);
 
-	mPlayer.setPosition(posMario);
-
-	std::shared_ptr<Entity> player = std::make_shared<Entity>();
-	player->m_sprite = mPlayer;
-	player->m_type = EntityType::player;
-	player->m_size = mTexture.getSize();
-	player->m_position = mPlayer.getPosition();
-
-	//std::cout << player->m_position.y << std::endl;
-	EntityManager::m_Entities.push_back(player);
+	int titlePosX = (screenResolution.x / 2) - mTitle.getLocalBounds().width / 2;
+	int titlePosY = (screenResolution.y / 2) - mTitle.getGlobalBounds().height / 2;
+	mTitle.setPosition(titlePosX, titlePosY);
 
 
-	// Draw Heart
 
-	_TextureHeart.loadFromFile("Media/Textures/Heart_small.png");
-	_sizeHeart = _TextureHeart.getSize();
+	// Draw New Game
 
-	for (int i = 0; i < healthPoints; i++)
-	{
-		_Heart[i].setTexture(_TextureHeart);
-		_Heart[i].setPosition(screenResolution.x - ((i + 1) * _sizeHeart.x), 0.f);
+	_TextureButtonNew.loadFromFile("Media/Textures/Button_newgame_small.png");
+	_sizeButtonNew = _TextureButtonNew.getSize();
+	_ButtonNew.setTexture(_TextureButtonNew);
 
-		std::shared_ptr<Entity> heart = std::make_shared<Entity>();
-		heart->m_sprite = _Heart[i];
-		heart->m_type = EntityType::heart;
-		heart->m_size = _TextureHeart.getSize();
-		heart->m_position = _Heart[i].getPosition();
-		EntityManager::m_Entities.push_back(heart);
-	}
+	int newGamePosX = (screenResolution.x / 2) - _sizeButtonNew.x / 2;
+	int newGamePosY = titlePosY + (mTitle.getPosition().y / 3);
+
+	_ButtonNew.setPosition(newGamePosX, newGamePosY);
+
+	std::shared_ptr<Entity> buttonNew = std::make_shared<Entity>();
+	buttonNew->m_sprite = _ButtonNew;
+	buttonNew->m_type = EntityType::button;
+	buttonNew->m_size = _TextureButtonNew.getSize();
+	buttonNew->m_position = _ButtonNew.getPosition();
+
+	EntityManager::m_Entities.push_back(buttonNew);
+
+
+
+	// Draw Exit
+
+	_TextureButtonExit.loadFromFile("Media/Textures/Button_exit_small.png");
+	_sizeButtonExit = _TextureButtonExit.getSize();
+	_ButtonExit.setTexture(_TextureButtonExit);
+
+	int exitPosX = (screenResolution.x / 2) - _sizeButtonExit.x / 2;
+	int exitPosY = newGamePosY + (mTitle.getPosition().y / 4);
+
+	_ButtonExit.setPosition(exitPosX, exitPosY);
+
+	std::shared_ptr<Entity> buttonExit = std::make_shared<Entity>();
+	buttonExit->m_sprite = _ButtonExit;
+	buttonExit->m_type = EntityType::button;
+	buttonExit->m_size = _TextureButtonExit.getSize();
+	buttonExit->m_position = _ButtonExit.getPosition();
+
+	EntityManager::m_Entities.push_back(buttonExit);
+
+
+
+	// Draw Cursor
+
+	_TextureCursor.loadFromFile("Media/Textures/Cursor_small.png");
+	_sizeCursor = _TextureCursor.getSize();
+	_Cursor.setTexture(_TextureCursor);
+
+	int cursorPosX = _sizeButtonNew.x + _sizeCursor.x;
+	int cursorPosY = newGamePosY + (_sizeCursor.y / 3);
+
+	_Cursor.setPosition(cursorPosX, cursorPosY);
+
+	std::shared_ptr<Entity> cursor = std::make_shared<Entity>();
+	cursor->m_sprite = _Cursor;
+	cursor->m_type = EntityType::cursor;
+	cursor->m_size = _TextureCursor.getSize();
+	cursor->m_position = _Cursor.getPosition();
+
+	EntityManager::m_Entities.push_back(cursor);
+
+
+
+	// Draw info text
+
+	mFont.loadFromFile("Media/Sansation.ttf");
+	mInfo.setString("Press the space key to validate your choice.");
+	mInfo.setFont(mFont);
+	mInfo.setCharacterSize(16);
+
+	int infoPosX = (screenResolution.x / 2) - mInfo.getLocalBounds().width / 2;
+	int infoPosY = screenResolution.y - (mInfo.getLocalBounds().height * 2);
+	mInfo.setPosition(infoPosX, infoPosY);
+		
+
+
 
 	// Draw Statistic Font 
 
@@ -315,163 +308,356 @@ void Game::processEvents()
 
 void Game::update(sf::Time elapsedTime)
 {
-	std::shared_ptr<Entity> player;
-	EntityManager em;
-	player = em.GetPlayer();
-
-	int delta_x = abs(player->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
-	int delta_y = abs(player->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
-	int pos_player_x = player->m_sprite.getPosition().x;
-	int pos_player_y = player->m_sprite.getPosition().y;
-	
-	sf::Vector2f movement(0.f, 0.f);
-	sf::Vector2f movementEnnemi[ENNEMI_COUNT];
-	
-	// manual imput
-	if (mIsMovingUp) {
-		for (int i = 0; i < ECHELLE_COUNT; i++) {
-			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
-				movement.y -= PlayerSpeed;
-			}
-		}
-	}
-	if (mIsMovingDown) {
-		for (int i = 0; i < ECHELLE_COUNT; i++) {
-			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
-				movement.y += PlayerSpeed;
-			}
-		}
-	}
-	if (mIsMovingLeft) 
+	if (gameMode == GameMode::initializeGame)
 	{
-		if (pos_player_x > 170)
-		{
-			movement.x -= PlayerSpeed;
+		// Draw blocks
 
-			if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
+		_TextureBlock.loadFromFile("Media/Textures/Block.png");
+		_sizeBlock = _TextureBlock.getSize();
+
+		for (int i = 0; i < BLOCK_COUNT_X; i++)
+		{
+			for (int j = 0; j < BLOCK_COUNT_Y; j++)
 			{
-				startAnimation(true);
-			}
-			
-		}
-	}
-	if (mIsMovingRight) 
-	{
-		if (pos_player_x < 685)
-		{
-			movement.x += PlayerSpeed;
+				_Block[i][j].setTexture(_TextureBlock);
+				_Block[i][j].setPosition(100.f + 70.f * (i + 1), 0.f + BLOCK_SPACE * (j + 1));
 
-			if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
-			{
-				startAnimation();
+				positionYBlocks[j] = _Block[i][j].getPosition().y;
+
+				std::shared_ptr<Entity> se = std::make_shared<Entity>();
+				se->m_sprite = _Block[i][j];
+				se->m_type = EntityType::block;
+				se->m_size = _TextureBlock.getSize();
+				se->m_position = _Block[i][j].getPosition();
+				EntityManager::m_Entities.push_back(se);
 			}
 		}
-	}
 
-	if (jump) 
-	{
-		if (jumpMario.state == JumpState::notActivated)
+		// Draw Ladders
+
+		_TextureEchelle.loadFromFile("Media/Textures/Ladder_small.png");
+
+		int minX;
+		int maxX = 700;
+		int randX = 0;
+
+		for (int i = 0; i < ECHELLE_COUNT; i++)
 		{
-			jumpMario.state = JumpState::toTheTop;
-			jumpMario.initialPosY = getNearestFloor(pos_player_y, positionYBlocks, _sizeMario.y);
-		}
-	}
+			int oldPosX = randX;
 
-
-	if (!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight)
-	{
-		stopAnimation();
-	}
-
-	int ennemiIndex = 0;
-
-	for (std::shared_ptr<Entity> entity : EntityManager::m_Entities)
-	{
-		if (entity->m_enabled == false)
-		{
-			continue;
-		}
-
-		if (entity->m_type != EntityType::player && entity->m_type != EntityType::ennemi)
-		{
-			continue;
-		}
-		if (entity->m_type == EntityType::player) 
-		{
-			if (jumpMario.state == JumpState::notActivated)
+			if (i == 3)
 			{
-				entity->m_sprite.move(movement * elapsedTime.asSeconds());
+				minX = 270; // for the bottom floor, move away the ladder from mario
 			}
 			else
 			{
-				if (jumpMario.state == JumpState::toTheTop)
+				minX = 170;
+			}
+
+			randX = eng() % (maxX - minX) + minX;
+
+			if (std::abs(randX - oldPosX) < 100) // if two ladders are close
+			{
+				randX = randX + std::abs(randX - oldPosX) + 100;
+				randX = randX >= maxX ? minX : randX;
+			}
+
+			_Echelle[i].setTexture(_TextureEchelle);
+			_Echelle[i].setPosition(randX, 0.f + BLOCK_SPACE * (i + 1) + _sizeBlock.y);
+
+			std::shared_ptr<Entity> se = std::make_shared<Entity>();
+			se->m_sprite = _Echelle[i];
+			se->m_type = EntityType::echelle;
+			se->m_size = _TextureEchelle.getSize();
+			se->m_position = _Echelle[i].getPosition();
+			EntityManager::m_Entities.push_back(se);
+		}
+
+		// Draw Ennemis
+
+		_TextureEnnemi.loadFromFile("Media/Textures/Goomba_small.png");
+		_sizeEnnemi = _TextureEnnemi.getSize();
+		for (int i = 0; i < ENNEMI_COUNT; i++)
+		{
+			_Ennemi[i].setTexture(_TextureEnnemi);
+
+			int initX = 100.f + 70.f;
+
+			int initY = BLOCK_SPACE * (i / 2 + 2) - _sizeEnnemi.y;
+			if (i % 2) {
+				initX += 530.f;
+			}
+
+			_Ennemi[i].setPosition(initX, initY);
+
+			std::shared_ptr<Entity> enn = std::make_shared<Entity>();
+			enn->m_sprite = _Ennemi[i];
+			enn->m_type = EntityType::ennemi;
+			enn->m_size = _TextureEnnemi.getSize();
+			enn->m_position = _Ennemi[i].getPosition();
+			EntityManager::m_Entities.push_back(enn);
+		}
+
+		// Draw Peach
+
+		_TexturePeach.loadFromFile("Media/Textures/Peach_small.png");
+		_sizePeach = _TexturePeach.getSize();
+		_Peach.setTexture(_TexturePeach);
+
+		sf::Vector2f posPeach;
+		posPeach.x = eng() % (700 - 170) + 170;
+		posPeach.y = BLOCK_SPACE - _sizePeach.y;
+		_Peach.setPosition(posPeach);
+
+		std::shared_ptr<Entity> peach = std::make_shared<Entity>();
+		peach->m_sprite = _Peach;
+		peach->m_type = EntityType::peach;
+		peach->m_size = _TexturePeach.getSize();
+		peach->m_position = _Peach.getPosition();
+
+		EntityManager::m_Entities.push_back(peach);
+
+
+		// Draw Mario
+
+		mTexture.loadFromFile("Media/Textures/Mario_animation_small.png");
+		sf::IntRect rectSourceSprite(0, 0, 31, 40);
+
+		mPlayer.setTextureRect(rectSourceSprite);
+		_sizeMario = mTexture.getSize();
+		mPlayer.setTexture(mTexture);
+		sf::Vector2f posMario;
+		posMario.x = 100.f + 70.f;
+		posMario.y = BLOCK_SPACE * 5 - _sizeMario.y;
+
+		mPlayer.setPosition(posMario);
+
+		std::shared_ptr<Entity> player = std::make_shared<Entity>();
+		player->m_sprite = mPlayer;
+		player->m_type = EntityType::player;
+		player->m_size = mTexture.getSize();
+		player->m_position = mPlayer.getPosition();
+
+		//std::cout << player->m_position.y << std::endl;
+		EntityManager::m_Entities.push_back(player);
+
+
+		// Draw Heart
+
+		_TextureHeart.loadFromFile("Media/Textures/Heart_small.png");
+		_sizeHeart = _TextureHeart.getSize();
+
+		for (int i = 0; i < healthPoints; i++)
+		{
+			_Heart[i].setTexture(_TextureHeart);
+			_Heart[i].setPosition(screenResolution.x - ((i + 1) * _sizeHeart.x), 0.f);
+
+			std::shared_ptr<Entity> heart = std::make_shared<Entity>();
+			heart->m_sprite = _Heart[i];
+			heart->m_type = EntityType::heart;
+			heart->m_size = _TextureHeart.getSize();
+			heart->m_position = _Heart[i].getPosition();
+			EntityManager::m_Entities.push_back(heart);
+		}
+
+		mIsSpaceBar = false;
+
+		gameMode = GameMode::playing;
+	}
+	else if (gameMode == GameMode::playing)
+	{
+		std::shared_ptr<Entity> player;
+		player = EntityManager::GetPlayer();
+
+		int delta_x = abs(player->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
+		int delta_y = abs(player->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
+		int pos_player_x = player->m_sprite.getPosition().x;
+		int pos_player_y = player->m_sprite.getPosition().y;
+
+		sf::Vector2f movement(0.f, 0.f);
+		sf::Vector2f movementEnnemi[ENNEMI_COUNT];
+
+		// manual imput
+		if (mIsMovingUp) {
+			for (int i = 0; i < ECHELLE_COUNT; i++) {
+				if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
+					movement.y -= PlayerSpeed;
+				}
+			}
+		}
+		if (mIsMovingDown) {
+			for (int i = 0; i < ECHELLE_COUNT; i++) {
+				if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
+					movement.y += PlayerSpeed;
+				}
+			}
+		}
+		if (mIsMovingLeft)
+		{
+			if (pos_player_x > 170)
+			{
+				movement.x -= PlayerSpeed;
+
+				if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
 				{
-					if (entity->m_sprite.getPosition().y > (jumpMario.initialPosY - JUMP_HEIGHT))
-					{
-						movement.y -= PlayerSpeed;
-						entity->m_sprite.move(movement * elapsedTime.asSeconds());
-					}
-					else
-					{
-						jumpMario.state = JumpState::toTheBottom;
-					}
+					startAnimation(true);
+				}
+
+			}
+		}
+		if (mIsMovingRight)
+		{
+			if (pos_player_x < 685)
+			{
+				movement.x += PlayerSpeed;
+
+				if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
+				{
+					startAnimation();
+				}
+			}
+		}
+
+		if (mIsSpaceBar)
+		{
+			if (jumpMario.state == JumpState::notActivated)
+			{
+				jumpMario.state = JumpState::toTheTop;
+				jumpMario.initialPosY = getNearestFloor(pos_player_y, positionYBlocks, _sizeMario.y);
+			}
+		}
+
+
+		if (!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight)
+		{
+			stopAnimation();
+		}
+
+		int ennemiIndex = 0;
+
+		for (std::shared_ptr<Entity> entity : EntityManager::m_Entities)
+		{
+			if (entity->m_enabled == false)
+			{
+				continue;
+			}
+
+			if (entity->m_type != EntityType::player && entity->m_type != EntityType::ennemi)
+			{
+				continue;
+			}
+			if (entity->m_type == EntityType::player)
+			{
+				if (jumpMario.state == JumpState::notActivated)
+				{
+					entity->m_sprite.move(movement * elapsedTime.asSeconds());
 				}
 				else
 				{
-					if (entity->m_sprite.getPosition().y < jumpMario.initialPosY)
+					if (jumpMario.state == JumpState::toTheTop)
 					{
-						movement.y += PlayerSpeed;
-						entity->m_sprite.move(movement * elapsedTime.asSeconds());
+						if (entity->m_sprite.getPosition().y > (jumpMario.initialPosY - JUMP_HEIGHT))
+						{
+							movement.y -= PlayerSpeed;
+							entity->m_sprite.move(movement * elapsedTime.asSeconds());
+						}
+						else
+						{
+							jumpMario.state = JumpState::toTheBottom;
+						}
 					}
 					else
 					{
-						jumpMario.state = JumpState::notActivated;
+						if (entity->m_sprite.getPosition().y < jumpMario.initialPosY)
+						{
+							movement.y += PlayerSpeed;
+							entity->m_sprite.move(movement * elapsedTime.asSeconds());
+						}
+						else
+						{
+							jumpMario.state = JumpState::notActivated;
+						}
 					}
-				}
-				
-			}
-			
-		}
 
-		if (entity->m_type == EntityType::ennemi) 
-		{
-			if (godTimeInSec == 0)
+				}
+
+			}
+
+			if (entity->m_type == EntityType::ennemi)
 			{
-				if (collision.isCollision(player->m_sprite, entity->m_sprite))
+				if (godTimeInSec == 0)
 				{
-					healthPoints--;
-					godTimeInSec = GOD_TIME_IN_SEC;
-
-					std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
-
-					EntityManager::DisableOneHeart(healthPoints);
-
-					if (healthPoints == 0)
+					if (collision.isCollision(player->m_sprite, entity->m_sprite))
 					{
-						std::cout << "Game Over !" << std::endl;
+						healthPoints--;
+						godTimeInSec = GOD_TIME_IN_SEC;
+
+						std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
+
+						EntityManager::DisableOneHeart(healthPoints);
+
+						if (healthPoints == 0)
+						{
+							std::cout << "Game Over !" << std::endl;
+						}
 					}
 				}
+
+
+				if (entity->m_sprite.getPosition().x >= 660.f + _sizeBlock.x - _sizeEnnemi.x)
+					dirEnnemi[ennemiIndex] = true;
+				if (entity->m_sprite.getPosition().x <= 170.f)
+					dirEnnemi[ennemiIndex] = false;
+
+
+				if (dirEnnemi[ennemiIndex]) { // go to left
+					movementEnnemi[ennemiIndex].x -= 90;
+				}
+				else { // go to right
+					movementEnnemi[ennemiIndex].x += 90;
+				}
+
+				entity->m_sprite.move(movementEnnemi[ennemiIndex] * elapsedTime.asSeconds());
+				ennemiIndex++;
 			}
 
-
-			if (entity->m_sprite.getPosition().x >= 660.f + _sizeBlock.x - _sizeEnnemi.x)
-				dirEnnemi[ennemiIndex] = true;
-			if (entity->m_sprite.getPosition().x <= 170.f)
-				dirEnnemi[ennemiIndex] = false;
-
-
-			if (dirEnnemi[ennemiIndex]) { // go to left
-				movementEnnemi[ennemiIndex].x -= 90;
-			}
-			else { // go to right
-				movementEnnemi[ennemiIndex].x += 90;
-			}
-
-			entity->m_sprite.move(movementEnnemi[ennemiIndex] * elapsedTime.asSeconds());
-			ennemiIndex++;
 		}
-		
 	}
+	else // menu
+	{
+		// manual imput
+		if (mIsMovingUp) 
+		{
+			if (clockCursor.getElapsedTime().asSeconds() >= 0.3f)
+			{
+				moveCursorMenu();
+				clockCursor.restart();
+			}
+		}
+
+		if (mIsMovingDown) 
+		{
+			if (clockCursor.getElapsedTime().asSeconds() >= 0.3f)
+			{
+				moveCursorMenu();
+				clockCursor.restart();
+			}
+		}
+
+		if (mIsSpaceBar)
+		{
+			if (cursorSelection == ActionMenu::newGame)
+			{
+				EntityManager::m_Entities.clear();
+				gameMode = GameMode::initializeGame;
+			}
+			else
+			{
+				mWindow.close();
+			}
+		}
+	}
+	
 }
 
 
@@ -487,6 +673,12 @@ void Game::render()
 		}
 
 		mWindow.draw(entity->m_sprite);
+	}
+
+	if (gameMode == GameMode::menu)
+	{
+		mWindow.draw(mTitle);
+		mWindow.draw(mInfo);
 	}
 
 	mWindow.draw(mStatisticsText);
@@ -541,7 +733,7 @@ void Game::handlePlayerInput(sf::Keyboard::Key key, bool isPressed)
 	}
 	if (key == sf::Keyboard::Space)
 	{
-		jump = isPressed;
+		mIsSpaceBar = isPressed;
 	}
 }
 

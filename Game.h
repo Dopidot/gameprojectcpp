@@ -9,6 +9,19 @@
 #define GOD_TIME_IN_SEC 3
 #define HEALTH_POINTS 5
 
+enum GameMode
+{
+	menu,
+	initializeGame,
+	playing
+};
+
+enum ActionMenu
+{
+	newGame,
+	exitGame
+};
+
 class Game
 {
 public:
@@ -33,15 +46,18 @@ private:
 	sf::Texture	mTexture;
 	sf::Sprite	mPlayer;
 	sf::Font	mFont;
+	sf::Font	mFontCustom;
 	sf::Text	mStatisticsText;
 	sf::Time	mStatisticsUpdateTime;
+	sf::Text	mTitle;
+	sf::Text	mInfo;
 
 	std::size_t	mStatisticsNumFrames;
 	bool mIsMovingUp;
 	bool mIsMovingDown;
 	bool mIsMovingRight;
 	bool mIsMovingLeft;
-	bool jump;
+	bool mIsSpaceBar;
 	bool dirEnnemi[ENNEMI_COUNT];
 
 	sf::Texture	_TextureEchelle;
@@ -52,15 +68,27 @@ private:
 	sf::Sprite	_Block[BLOCK_COUNT_X][BLOCK_COUNT_Y];
 	sf::Texture	_TextureWeapon;
 	sf::Sprite	_Weapon;
-	sf::Texture	_TextureFlag;
-	sf::Sprite	_Flag;
+	sf::Texture	_TexturePeach;
+	sf::Sprite	_Peach;
 	sf::Texture	_TextureHeart;
 	sf::Sprite	_Heart[HEALTH_POINTS];
+	sf::Texture	_TextureLogo;
+	sf::Sprite	_Logo;
+	sf::Texture	_TextureButtonNew;
+	sf::Sprite	_ButtonNew;
+	sf::Texture	_TextureButtonExit;
+	sf::Sprite	_ButtonExit;
+	sf::Texture	_TextureCursor;
+	sf::Sprite	_Cursor;
 
 	sf::Vector2u _sizeBlock;
 	sf::Vector2u _sizeEnnemi;
 	sf::Vector2u _sizeMario;
-	sf::Vector2u _sizeFlag;
+	sf::Vector2u _sizePeach;
 	sf::Vector2u _sizeHeart;
+	sf::Vector2u _sizeLogo;
+	sf::Vector2u _sizeButtonNew;
+	sf::Vector2u _sizeButtonExit;
+	sf::Vector2u _sizeCursor;
 };
 
