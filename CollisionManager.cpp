@@ -12,7 +12,7 @@ CollisionManager::~CollisionManager()
 {
 }
 
-bool CollisionManager::isCollision(sf::Sprite const& mainCharacter, sf::Sprite const& object, int stairGap)
+bool CollisionManager::isCollision(sf::Sprite const& mainCharacter, sf::Sprite const& object, int topGap, int sideGap)
 {
 	//Character 
 	int position_x1_character = mainCharacter.getPosition().x;
@@ -28,12 +28,10 @@ bool CollisionManager::isCollision(sf::Sprite const& mainCharacter, sf::Sprite c
 	int position_x2_object = position_x1_object + object.getLocalBounds().width;
 	int position_y2_object = position_y1_object + object.getLocalBounds().height;
 
-	if (
-		position_x1_character >= position_x2_object ||
-		position_x2_character <= position_x1_object ||
+	if (position_x1_character >= position_x2_object - sideGap ||
+		position_x2_character <= position_x1_object + sideGap ||
 		position_y1_character >= position_y2_object  ||
-		position_y2_character <= position_y1_object - stairGap
-		)
+		position_y2_character <= position_y1_object - topGap)
 	{
 		
 		return false;

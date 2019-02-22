@@ -5,7 +5,7 @@
 #define BLOCK_COUNT_X 8
 #define BLOCK_COUNT_Y 5
 #define BLOCK_SPACE 110.f
-#define JUMP_HEIGHT 35
+#define JUMP_HEIGHT 50
 #define GOD_TIME_IN_SEC 3
 #define HEALTH_POINTS 5
 

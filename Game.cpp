@@ -19,6 +19,8 @@ int positionYBlocks[BLOCK_COUNT_Y];
 int healthPoints = HEALTH_POINTS;
 int godTimeInSec = 0;
 
+sf::Clock clockAnimation;
+
 float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
 {
 	for (int i = 0; i < BLOCK_COUNT_Y; i++)
@@ -29,7 +31,54 @@ float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
 		}
 	}
 
-	return actualPosY;
+	return positionYBlocks[BLOCK_COUNT_Y - 1] - sizeYMario;
+}
+
+void startAnimation(bool isLeftSide = false)
+{
+	std::shared_ptr<Entity> player;
+	EntityManager em;
+	player = em.GetPlayer();
+	sf::IntRect rectSourceSprite;
+
+	if (player->m_sprite.getTextureRect().left == 35)
+	{
+		rectSourceSprite = sf::IntRect(77, 0, 28, 40);
+	}
+	else
+	{
+		rectSourceSprite = sf::IntRect(35, 0, 38, 40);
+	}
+
+	player->m_sprite.setTextureRect(rectSourceSprite);
+
+	if (isLeftSide)
+	{
+		if (player->m_sprite.getScale().x == 1)
+		{
+			player->m_sprite.setOrigin(player->m_sprite.getLocalBounds().width, 0);
+			player->m_sprite.setScale(-1, 1);
+		}
+	}
+	else if (player->m_sprite.getScale().x == -1)
+	{
+		player->m_sprite.setOrigin(0, 0);
+		player->m_sprite.setScale(1, 1);
+	}
+
+	clockAnimation.restart();
+}
+
+void stopAnimation()
+{
+	std::shared_ptr<Entity> player;
+	EntityManager em;
+	player = em.GetPlayer();
+
+	sf::IntRect rectSourceSprite(0, 0, 31, 40);
+	player->m_sprite.setTextureRect(rectSourceSprite);
+
+	clockAnimation.restart();
 }
 
 Game::Game()
@@ -84,9 +133,9 @@ Game::Game()
 		}
 	}
 
-	// Draw Echelles
+	// Draw Ladders
 
-	_TextureEchelle.loadFromFile("Media/Textures/Echelle.png");
+	_TextureEchelle.loadFromFile("Media/Textures/Ladder_small.png");
 
 	int minX;
 	int maxX = 700;
@@ -171,17 +220,10 @@ Game::Game()
 
 	// Draw Mario
 
+	mTexture.loadFromFile("Media/Textures/Mario_animation_small.png"); 
+	sf::IntRect rectSourceSprite(0, 0, 31, 40);
 
-	//sf::IntRect rectSourceSprite(10, 10, 50, 50);
-	//sf::Sprite sprite(texture, rectSourceSprite);
-
-	mTexture.loadFromFile("Media/Textures/Mario_small_transparent.png"); // Mario_small.png");
-	//mTexture.loadFromFile("Media/Textures/Mario_animation.png"); // Mario_small.png");
-	//sf::IntRect rectSourceSpriteTemp(0, 0, 160, 140);
-	//sf::Sprite sprite(mTexture, rectSourceSpriteTemp);
-	//mPlayer = sprite;
-	//rectSourceSprite = rectSourceSpriteTemp;
-																 //_sizeMario = mTexture.getSize();
+	mPlayer.setTextureRect(rectSourceSprite);
 	_sizeMario = mTexture.getSize();
 	mPlayer.setTexture(mTexture);
 	sf::Vector2f posMario;
@@ -230,37 +272,20 @@ Game::Game()
 
 void Game::run()
 {
-	//sf::Clock clockTest;
 	sf::Clock clock;
 	sf::Time timeSinceLastUpdate = sf::Time::Zero;
 	while (mWindow.isOpen())
 	{
-		/*if (clockTest.getElapsedTime().asSeconds() > 1.0f)
-		{
-			if (rectSourceSprite.left == 300)
-			{
-				rectSourceSprite.left = 0;
-			}
-			else
-			{
-				rectSourceSprite.left += 150;
-			}
-
-			mPlayer.setTextureRect(rectSourceSprite);
-			clockTest.restart();
-		}*/
-
-
 		sf::Time elapsedTime = clock.restart();
 		timeSinceLastUpdate += elapsedTime;
 		while (timeSinceLastUpdate > TimePerFrame)
 		{
 			timeSinceLastUpdate -= TimePerFrame;
-
+			
 			processEvents();
 			update(TimePerFrame);
 		}
-
+		
 		updateStatistics(elapsedTime);
 		render();
 	}
@@ -298,8 +323,6 @@ void Game::update(sf::Time elapsedTime)
 	int delta_y = abs(player->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
 	int pos_player_x = player->m_sprite.getPosition().x;
 	int pos_player_y = player->m_sprite.getPosition().y;
-
-	//std::cout << delta_y << std::endl;
 	
 	sf::Vector2f movement(0.f, 0.f);
 	sf::Vector2f movementEnnemi[ENNEMI_COUNT];
@@ -307,14 +330,14 @@ void Game::update(sf::Time elapsedTime)
 	// manual imput
 	if (mIsMovingUp) {
 		for (int i = 0; i < ECHELLE_COUNT; i++) {
-			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y)) {
+			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
 				movement.y -= PlayerSpeed;
 			}
 		}
 	}
 	if (mIsMovingDown) {
 		for (int i = 0; i < ECHELLE_COUNT; i++) {
-			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y)) {
+			if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
 				movement.y += PlayerSpeed;
 			}
 		}
@@ -324,6 +347,12 @@ void Game::update(sf::Time elapsedTime)
 		if (pos_player_x > 170)
 		{
 			movement.x -= PlayerSpeed;
+
+			if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
+			{
+				startAnimation(true);
+			}
+			
 		}
 	}
 	if (mIsMovingRight) 
@@ -331,6 +360,11 @@ void Game::update(sf::Time elapsedTime)
 		if (pos_player_x < 685)
 		{
 			movement.x += PlayerSpeed;
+
+			if (clockAnimation.getElapsedTime().asSeconds() >= 0.2f)
+			{
+				startAnimation();
+			}
 		}
 	}
 
@@ -341,6 +375,12 @@ void Game::update(sf::Time elapsedTime)
 			jumpMario.state = JumpState::toTheTop;
 			jumpMario.initialPosY = getNearestFloor(pos_player_y, positionYBlocks, _sizeMario.y);
 		}
+	}
+
+
+	if (!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight)
+	{
+		stopAnimation();
 	}
 
 	int ennemiIndex = 0;
@@ -471,6 +511,7 @@ void Game::updateStatistics(sf::Time elapsedTime)
 		{
 			godTimeInSec--;
 		}
+
 	}
 
 	//
@@ -503,5 +544,7 @@ void Game::handlePlayerInput(sf::Keyboard::Key key, bool isPressed)
 		jump = isPressed;
 	}
 }
+
+
 
 

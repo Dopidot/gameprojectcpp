@@ -7,6 +7,6 @@ public:
 	CollisionManager();
 	~CollisionManager();
 public:
-	bool isCollision(sf::Sprite const& , sf::Sprite const& , int stairGap = 0);
+	bool isCollision(sf::Sprite const& , sf::Sprite const& , int topGap = 0, int sideGap = 0);
 };
 
