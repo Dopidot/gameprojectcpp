@@ -4,7 +4,7 @@ enum EntityType
 {
 	player,
 	block,
-	echelle,
+	ladder,
 	ennemi,
 	peach,
 	heart,

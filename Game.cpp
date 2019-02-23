@@ -22,13 +22,15 @@ int healthPoints = HEALTH_POINTS;
 int godTimeInSec = 0;
 int score;
 
+bool isClimbingLadder = false;
+
 sf::Clock clockAnimation;
 sf::Clock clockCursor;
 sf::Clock clockEndGame;
 
 
 
-float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
+float getNearestFloor(float actualPosY, int sizeYMario)
 {
 	for (int i = 0; i < BLOCK_COUNT_Y; i++)
 	{
@@ -41,23 +43,20 @@ float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
 	return positionYBlocks[BLOCK_COUNT_Y - 1] - sizeYMario;
 }
 
-void changeOrientation(bool isLeftSide = false)
+void changeOrientation(std::shared_ptr<Entity> entity, bool isLeftSide = false)
 {
-	std::shared_ptr<Entity> player;
-	player = EntityManager::GetPlayer();
-
 	if (isLeftSide)
 	{
-		if (player->m_sprite.getScale().x == 1)
+		if (entity->m_sprite.getScale().x == 1)
 		{
-			player->m_sprite.setOrigin(player->m_sprite.getLocalBounds().width, 0);
-			player->m_sprite.setScale(-1, 1);
+			entity->m_sprite.setOrigin(entity->m_sprite.getLocalBounds().width, 0);
+			entity->m_sprite.setScale(-1, 1);
 		}
 	}
-	else if (player->m_sprite.getScale().x == -1)
+	else if (entity->m_sprite.getScale().x == -1)
 	{
-		player->m_sprite.setOrigin(0, 0);
-		player->m_sprite.setScale(1, 1);
+		entity->m_sprite.setOrigin(0, 0);
+		entity->m_sprite.setScale(1, 1);
 	}
 }
 
@@ -79,7 +78,7 @@ void startAnimation(bool isLeftSide = false)
 
 	player->m_sprite.setTextureRect(rectSourceSprite);
 
-	changeOrientation(isLeftSide);
+	changeOrientation(player, isLeftSide);
 
 	clockAnimation.restart();
 }
@@ -348,13 +347,13 @@ void Game::update(sf::Time elapsedTime)
 
 		// Draw Ladders
 
-		_TextureEchelle.loadFromFile("Media/Textures/Ladder_small.png");
+		_TextureLadder.loadFromFile("Media/Textures/Ladder_small.png");
 
 		int minX;
 		int maxX = 700;
 		int randX = 0;
 
-		for (int i = 0; i < ECHELLE_COUNT; i++)
+		for (int i = 0; i < LADDER_COUNT; i++)
 		{
 			int oldPosX = randX;
 
@@ -375,15 +374,15 @@ void Game::update(sf::Time elapsedTime)
 				randX = randX >= maxX ? minX : randX;
 			}
 
-			_Echelle[i].setTexture(_TextureEchelle);
-			_Echelle[i].setPosition(randX, 0.f + BLOCK_SPACE * (i + 1) + _sizeBlock.y);
+			_Ladder[i].setTexture(_TextureLadder);
+			_Ladder[i].setPosition(randX, 0.f + BLOCK_SPACE * (i + 1) + _sizeBlock.y);
 
-			std::shared_ptr<Entity> se = std::make_shared<Entity>();
-			se->m_sprite = _Echelle[i];
-			se->m_type = EntityType::echelle;
-			se->m_size = _TextureEchelle.getSize();
-			se->m_position = _Echelle[i].getPosition();
-			EntityManager::m_Entities.push_back(se);
+			std::shared_ptr<Entity> ladder = std::make_shared<Entity>();
+			ladder->m_sprite = _Ladder[i];
+			ladder->m_type = EntityType::ladder;
+			ladder->m_size = _TextureLadder.getSize();
+			ladder->m_position = _Ladder[i].getPosition();
+			EntityManager::m_Entities.push_back(ladder);
 		}
 
 
@@ -532,8 +531,8 @@ void Game::update(sf::Time elapsedTime)
 		std::shared_ptr<Entity> player;
 		player = EntityManager::GetPlayer();
 
-		int delta_x = abs(player->m_sprite.getPosition().x - _Echelle[3].getPosition().x);
-		int delta_y = abs(player->m_sprite.getPosition().y - _Echelle[3].getPosition().y);
+		int delta_x = abs(player->m_sprite.getPosition().x - _Ladder[3].getPosition().x);
+		int delta_y = abs(player->m_sprite.getPosition().y - _Ladder[3].getPosition().y);
 		int pos_player_x = player->m_sprite.getPosition().x;
 		int pos_player_y = player->m_sprite.getPosition().y;
 
@@ -545,13 +544,18 @@ void Game::update(sf::Time elapsedTime)
 		{
 			if (jumpMario.state == JumpState::notActivated)
 			{
-				for (int i = 0; i < ECHELLE_COUNT; i++) 
+				bool isClimbingLadderTemp = false;
+
+				for (int i = 0; i < LADDER_COUNT; i++) 
 				{
-					if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) 
+					if (collision.isCollision(player->m_sprite, _Ladder[i], _sizeBlock.y, _Ladder->getLocalBounds().width / 2))
 					{
 						movement.y -= PlayerSpeed;
+						isClimbingLadderTemp = true;
 					}
 				}
+
+				isClimbingLadder = isClimbingLadderTemp;
 			}
 			
 		}
@@ -560,25 +564,35 @@ void Game::update(sf::Time elapsedTime)
 		{
 			if (jumpMario.state == JumpState::notActivated)
 			{
-				for (int i = 0; i < ECHELLE_COUNT; i++) 
+				bool isClimbingLadderTemp = false;
+				int getNearestFloorPosY = getNearestFloor(pos_player_y, _sizeMario.y);
+
+				for (int i = 0; i < LADDER_COUNT; i++)
 				{
-					if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) 
+					if (collision.isCollision(player->m_sprite, _Ladder[i], _sizeBlock.y, _Ladder->getLocalBounds().width / 2))
 					{
-						movement.y += PlayerSpeed;
+						if (pos_player_y < getNearestFloorPosY)
+						{
+							movement.y += PlayerSpeed;
+							isClimbingLadderTemp = true;
+						}
 					}
 				}
+
+				isClimbingLadder = isClimbingLadderTemp;
 			}
 		}
 
 		if (mIsMovingLeft)
 		{
-			if (pos_player_x > 170)
+			if (pos_player_x > 170 && (!isClimbingLadder || pos_player_y == getNearestFloor(pos_player_y, _sizeMario.y)))
 			{
 				movement.x -= PlayerSpeed;
+				isClimbingLadder = false;
 
 				if (jumpMario.state != JumpState::notActivated)
 				{
-					changeOrientation(true);
+					changeOrientation(player, true);
 				}
 				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
@@ -590,13 +604,14 @@ void Game::update(sf::Time elapsedTime)
 
 		if (mIsMovingRight)
 		{
-			if (pos_player_x < 685)
+			if (pos_player_x < 685 && (!isClimbingLadder || pos_player_y == getNearestFloor(pos_player_y, _sizeMario.y)))
 			{
 				movement.x += PlayerSpeed;
+				isClimbingLadder = false;
 
 				if (jumpMario.state != JumpState::notActivated)
 				{
-					changeOrientation();
+					changeOrientation(player);
 				}
 				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
@@ -610,12 +625,12 @@ void Game::update(sf::Time elapsedTime)
 			if (jumpMario.state == JumpState::notActivated)
 			{
 				jumpMario.state = JumpState::toTheTop;
-				jumpMario.initialPosY = getNearestFloor(pos_player_y, positionYBlocks, _sizeMario.y);
+				jumpMario.initialPosY = getNearestFloor(pos_player_y, _sizeMario.y);
 			}
 		}
 
 
-		if ((!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight) || jumpMario.state != JumpState::notActivated)
+		if ((!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight) || jumpMario.state != JumpState::notActivated || isClimbingLadder)
 		{
 			stopAnimation();
 		}
@@ -680,7 +695,7 @@ void Game::update(sf::Time elapsedTime)
 						{
 							entity->m_enabled = false;
 
-							score += 5;
+							score += 50;
 							mScore.setString("Score : " + toString(score));
 
 							jumpMario.state = JumpState::toTheTop;
@@ -696,8 +711,32 @@ void Game::update(sf::Time elapsedTime)
 
 							if (score > 0)
 							{
-								score -= 5;
+								score -= 50;
 								mScore.setString("Score : " + toString(score));
+							}
+
+							if (healthPoints == 0)
+							{
+								gameMode = GameMode::ending;
+
+								std::cout << "Game Over !" << std::endl;
+
+								// Draw Game Over
+
+								_TextureGameOver.loadFromFile("Media/Textures/Game_over_small.png");
+								_sizeGameOver = _TextureGameOver.getSize();
+								_GameOver.setTexture(_TextureGameOver);
+
+								_GameOver.setPosition((screenResolution.x / 2) - (_sizeGameOver.x / 2), (screenResolution.y / 2) - (_sizeGameOver.y / 2));
+
+								std::shared_ptr<Entity> gameOver = std::make_shared<Entity>();
+								gameOver->m_sprite = _GameOver;
+								gameOver->m_type = EntityType::endScreen;
+								gameOver->m_size = _TextureGameOver.getSize();
+								gameOver->m_position = _GameOver.getPosition();
+								EntityManager::m_Entities.push_back(gameOver);
+
+								clockEndGame.restart();
 							}
 						}
 					}
@@ -729,6 +768,16 @@ void Game::update(sf::Time elapsedTime)
 					{
 						std::cout << "You Win !" << std::endl;
 						isVictory = true;
+						gameMode = GameMode::ending;
+
+						if (player->m_sprite.getPosition().x < entity->m_sprite.getPosition().x)
+						{
+							changeOrientation(entity, true);
+						}
+						else
+						{
+							changeOrientation(entity);
+						}
 
 						// Draw Victory
 
@@ -771,50 +820,23 @@ void Game::update(sf::Time elapsedTime)
 				{
 					entity->m_enabled = false;
 
-					score += 10;
+					score += 100;
 					mScore.setString("Score : " + toString(score));
 				}
 			}
 
 		}
 
-		if (isVictory || healthPoints <= 0)
+	}
+	else if (gameMode == GameMode::ending)
+	{
+		if (clockEndGame.getElapsedTime().asSeconds() >= 5.0f)
 		{
-			if (healthPoints == 0)
-			{
-				if (clockEndGame.getElapsedTime().asSeconds() >= 3.0f)
-				{
-					std::cout << "Game Over !" << std::endl;
-
-					// Draw Game Over
-
-					_TextureGameOver.loadFromFile("Media/Textures/Game_over_small.png");
-					_sizeGameOver = _TextureGameOver.getSize();
-					_GameOver.setTexture(_TextureGameOver);
-
-					_GameOver.setPosition((screenResolution.x / 2) - (_sizeGameOver.x / 2), (screenResolution.y / 2) - (_sizeGameOver.y / 2));
-
-					std::shared_ptr<Entity> gameOver = std::make_shared<Entity>();
-					gameOver->m_sprite = _GameOver;
-					gameOver->m_type = EntityType::endScreen;
-					gameOver->m_size = _TextureGameOver.getSize();
-					gameOver->m_position = _GameOver.getPosition();
-					EntityManager::m_Entities.push_back(gameOver);
-
-					healthPoints = -1;
-
-					clockEndGame.restart();
-				}
-			}
-			else if (clockEndGame.getElapsedTime().asSeconds() >= 5.0f)
-			{
-				EntityManager::m_Entities.clear();
-				gameMode = GameMode::initializeMenu;
-				clockEndGame.restart();
-				isVictory = false;
-			}
+			EntityManager::m_Entities.clear();
+			gameMode = GameMode::initializeMenu;
+			clockEndGame.restart();
+			isVictory = false;
 		}
-
 	}
 	else // menu
 	{
@@ -933,7 +955,4 @@ void Game::handlePlayerInput(sf::Keyboard::Key key, bool isPressed)
 		mIsSpaceBar = isPressed;
 	}
 }
-
-
-
 

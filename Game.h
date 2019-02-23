@@ -1,6 +1,6 @@
 #pragma once
 
-#define ECHELLE_COUNT 4
+#define LADDER_COUNT 4
 #define ENNEMI_COUNT 6
 #define BLOCK_COUNT_X 8
 #define BLOCK_COUNT_Y 5
@@ -15,7 +15,8 @@ enum GameMode
 	initializeMenu,
 	menu,
 	initializeGame,
-	playing
+	playing,
+	ending
 };
 
 enum ActionMenu
@@ -63,8 +64,8 @@ private:
 	bool mIsSpaceBar;
 	bool dirEnnemi[ENNEMI_COUNT];
 
-	sf::Texture	_TextureEchelle;
-	sf::Sprite	_Echelle[ECHELLE_COUNT];
+	sf::Texture	_TextureLadder;
+	sf::Sprite	_Ladder[LADDER_COUNT];
 	sf::Texture	_TextureBlock;
 	sf::Sprite	_Ennemi[ENNEMI_COUNT];
 	sf::Texture	_TextureEnnemi;
