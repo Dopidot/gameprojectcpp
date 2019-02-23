@@ -11,7 +11,8 @@ enum EntityType
 	logo,
 	button,
 	cursor,
-	endScreen
+	endScreen,
+	piece
 };
 
 class Entity

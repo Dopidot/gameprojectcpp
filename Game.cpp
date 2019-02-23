@@ -20,6 +20,7 @@ int positionYBlocks[BLOCK_COUNT_Y];
 
 int healthPoints = HEALTH_POINTS;
 int godTimeInSec = 0;
+int score;
 
 sf::Clock clockAnimation;
 sf::Clock clockCursor;
@@ -40,23 +41,10 @@ float getNearestFloor(float actualPosY, int *positionYBlocks, int sizeYMario)
 	return positionYBlocks[BLOCK_COUNT_Y - 1] - sizeYMario;
 }
 
-void startAnimation(bool isLeftSide = false)
+void changeOrientation(bool isLeftSide = false)
 {
 	std::shared_ptr<Entity> player;
-	EntityManager em;
-	player = em.GetPlayer();
-	sf::IntRect rectSourceSprite;
-
-	if (player->m_sprite.getTextureRect().left == 35)
-	{
-		rectSourceSprite = sf::IntRect(77, 0, 28, 40);
-	}
-	else
-	{
-		rectSourceSprite = sf::IntRect(35, 0, 38, 40);
-	}
-
-	player->m_sprite.setTextureRect(rectSourceSprite);
+	player = EntityManager::GetPlayer();
 
 	if (isLeftSide)
 	{
@@ -71,6 +59,27 @@ void startAnimation(bool isLeftSide = false)
 		player->m_sprite.setOrigin(0, 0);
 		player->m_sprite.setScale(1, 1);
 	}
+}
+
+void startAnimation(bool isLeftSide = false)
+{
+	std::shared_ptr<Entity> player;
+	player = EntityManager::GetPlayer();
+
+	sf::IntRect rectSourceSprite;
+
+	if (player->m_sprite.getTextureRect().left == 35)
+	{
+		rectSourceSprite = sf::IntRect(77, 0, 28, 40);
+	}
+	else
+	{
+		rectSourceSprite = sf::IntRect(35, 0, 38, 40);
+	}
+
+	player->m_sprite.setTextureRect(rectSourceSprite);
+
+	changeOrientation(isLeftSide);
 
 	clockAnimation.restart();
 }
@@ -78,8 +87,7 @@ void startAnimation(bool isLeftSide = false)
 void stopAnimation()
 {
 	std::shared_ptr<Entity> player;
-	EntityManager em;
-	player = em.GetPlayer();
+	player = EntityManager::GetPlayer();
 
 	sf::IntRect rectSourceSprite(0, 0, 31, 40);
 	player->m_sprite.setTextureRect(rectSourceSprite);
@@ -230,7 +238,7 @@ void Game::update(sf::Time elapsedTime)
 		mTitle.setCharacterSize(32);
 
 		int titlePosX = (screenResolution.x / 2) - mTitle.getLocalBounds().width / 2;
-		int titlePosY = (screenResolution.y / 2) - mTitle.getGlobalBounds().height / 2;
+		int titlePosY = (screenResolution.y / 2) - mTitle.getLocalBounds().height / 2;
 		mTitle.setPosition(titlePosX, titlePosY);
 
 
@@ -378,6 +386,41 @@ void Game::update(sf::Time elapsedTime)
 			EntityManager::m_Entities.push_back(se);
 		}
 
+
+
+		// Draw Pieces
+
+		_TexturePiece.loadFromFile("Media/Textures/Piece_small.png");
+		_sizePiece = _TexturePiece.getSize();
+
+		for (int i = 0; i < PIECE_COUNT; i++)
+		{
+			_Piece[i].setTexture(_TexturePiece);
+
+			sf::Vector2f posPiece;
+
+			posPiece.x = 200.f;
+
+			posPiece.y = BLOCK_SPACE * (i / 2 + 2) - (_sizePiece.y + _sizePiece.y / 2);
+
+			if (i % 2 == 0)
+			{
+				posPiece.x += 470.f;
+			}
+
+			_Piece[i].setPosition(posPiece);
+
+			std::shared_ptr<Entity> piece = std::make_shared<Entity>();
+			piece->m_sprite = _Piece[i];
+			piece->m_type = EntityType::piece;
+			piece->m_size = _TexturePiece.getSize();
+			piece->m_position = _Piece[i].getPosition();
+
+			EntityManager::m_Entities.push_back(piece);
+		}
+
+
+
 		// Draw Ennemis
 
 		_TextureEnnemi.loadFromFile("Media/Textures/Goomba_small.png");
@@ -403,6 +446,7 @@ void Game::update(sf::Time elapsedTime)
 			EntityManager::m_Entities.push_back(enn);
 		}
 
+
 		// Draw Peach
 
 		_TexturePeach.loadFromFile("Media/Textures/Peach_small.png");
@@ -421,6 +465,7 @@ void Game::update(sf::Time elapsedTime)
 		peach->m_position = _Peach.getPosition();
 
 		EntityManager::m_Entities.push_back(peach);
+
 
 
 		// Draw Mario
@@ -464,6 +509,20 @@ void Game::update(sf::Time elapsedTime)
 			EntityManager::m_Entities.push_back(heart);
 		}
 
+
+
+		// Draw Score 
+		
+		score = 0;
+		mFontCustom.loadFromFile("Media/College.ttf");
+		mScore.setString("Score : " + toString(score));
+		mScore.setFont(mFontCustom);
+		mScore.setCharacterSize(24);
+
+		int scorePosX = (screenResolution.x / 2) - mScore.getLocalBounds().width / 2;
+		mScore.setPosition(scorePosX, 0.f);
+
+
 		mIsSpaceBar = false;
 
 		gameMode = GameMode::playing;
@@ -482,18 +541,31 @@ void Game::update(sf::Time elapsedTime)
 		sf::Vector2f movementEnnemi[ENNEMI_COUNT];
 
 		// manual imput
-		if (mIsMovingUp) {
-			for (int i = 0; i < ECHELLE_COUNT; i++) {
-				if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
-					movement.y -= PlayerSpeed;
+		if (mIsMovingUp) 
+		{
+			if (jumpMario.state == JumpState::notActivated)
+			{
+				for (int i = 0; i < ECHELLE_COUNT; i++) 
+				{
+					if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) 
+					{
+						movement.y -= PlayerSpeed;
+					}
 				}
 			}
+			
 		}
 
-		if (mIsMovingDown) {
-			for (int i = 0; i < ECHELLE_COUNT; i++) {
-				if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) {
-					movement.y += PlayerSpeed;
+		if (mIsMovingDown) 
+		{
+			if (jumpMario.state == JumpState::notActivated)
+			{
+				for (int i = 0; i < ECHELLE_COUNT; i++) 
+				{
+					if (collision.isCollision(player->m_sprite, _Echelle[i], _sizeBlock.y, _Echelle->getTexture()->getSize().x / 2)) 
+					{
+						movement.y += PlayerSpeed;
+					}
 				}
 			}
 		}
@@ -504,7 +576,11 @@ void Game::update(sf::Time elapsedTime)
 			{
 				movement.x -= PlayerSpeed;
 
-				if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
+				if (jumpMario.state != JumpState::notActivated)
+				{
+					changeOrientation(true);
+				}
+				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
 					startAnimation(true);
 				}
@@ -518,7 +594,11 @@ void Game::update(sf::Time elapsedTime)
 			{
 				movement.x += PlayerSpeed;
 
-				if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
+				if (jumpMario.state != JumpState::notActivated)
+				{
+					changeOrientation();
+				}
+				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
 					startAnimation();
 				}
@@ -535,7 +615,7 @@ void Game::update(sf::Time elapsedTime)
 		}
 
 
-		if (!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight)
+		if ((!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight) || jumpMario.state != JumpState::notActivated)
 		{
 			stopAnimation();
 		}
@@ -549,7 +629,7 @@ void Game::update(sf::Time elapsedTime)
 				continue;
 			}
 
-			if (entity->m_type != EntityType::player && entity->m_type != EntityType::ennemi && entity->m_type != EntityType::peach)
+			if (entity->m_type != EntityType::player && entity->m_type != EntityType::ennemi && entity->m_type != EntityType::peach && entity->m_type != EntityType::piece)
 			{
 				continue;
 			}
@@ -594,9 +674,18 @@ void Game::update(sf::Time elapsedTime)
 			{
 				if (godTimeInSec == 0)
 				{
-					if (collision.isCollision(player->m_sprite, entity->m_sprite))
+					if (collision.isCollision(player->m_sprite, entity->m_sprite, 0, 5))
 					{
-						if (healthPoints > 0)
+						if (jumpMario.state == JumpState::toTheBottom)
+						{
+							entity->m_enabled = false;
+
+							score += 5;
+							mScore.setString("Score : " + toString(score));
+
+							jumpMario.state = JumpState::toTheTop;
+						}
+						else if (healthPoints > 0)
 						{
 							healthPoints--;
 							godTimeInSec = GOD_TIME_IN_SEC;
@@ -604,6 +693,12 @@ void Game::update(sf::Time elapsedTime)
 							std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
 
 							EntityManager::DisableOneHeart(healthPoints);
+
+							if (score > 0)
+							{
+								score -= 5;
+								mScore.setString("Score : " + toString(score));
+							}
 						}
 					}
 				}
@@ -666,14 +761,24 @@ void Game::update(sf::Time elapsedTime)
 
 						
 						clockEndGame.restart();
-
 					}
+				}
+			}
+
+			if (entity->m_type == EntityType::piece)
+			{
+				if (collision.isCollision(player->m_sprite, entity->m_sprite))
+				{
+					entity->m_enabled = false;
+
+					score += 10;
+					mScore.setString("Score : " + toString(score));
 				}
 			}
 
 		}
 
-		if (isVictory || !isVictory && healthPoints <= 0)
+		if (isVictory || healthPoints <= 0)
 		{
 			if (healthPoints == 0)
 			{
@@ -767,6 +872,10 @@ void Game::render()
 	{
 		mWindow.draw(mTitle);
 		mWindow.draw(mInfo);
+	}
+	else if (gameMode == GameMode::playing)
+	{
+		mWindow.draw(mScore);
 	}
 
 	mWindow.draw(mStatisticsText);

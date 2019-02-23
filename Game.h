@@ -8,6 +8,7 @@
 #define JUMP_HEIGHT 50
 #define GOD_TIME_IN_SEC 3
 #define HEALTH_POINTS 5
+#define PIECE_COUNT 7
 
 enum GameMode
 {
@@ -52,6 +53,7 @@ private:
 	sf::Time	mStatisticsUpdateTime;
 	sf::Text	mTitle;
 	sf::Text	mInfo;
+	sf::Text	mScore;
 
 	std::size_t	mStatisticsNumFrames;
 	bool mIsMovingUp;
@@ -86,6 +88,8 @@ private:
 	sf::Texture	_TextureGameOver;
 	sf::Sprite	_GameOver;
 	sf::Sprite	_Love;
+	sf::Texture	_TexturePiece;
+	sf::Sprite	_Piece[PIECE_COUNT];
 
 	sf::Vector2u _sizeBlock;
 	sf::Vector2u _sizeEnnemi;
@@ -98,5 +102,6 @@ private:
 	sf::Vector2u _sizeCursor;
 	sf::Vector2u _sizeVictory;
 	sf::Vector2u _sizeGameOver;
+	sf::Vector2u _sizePiece;
 };
 
