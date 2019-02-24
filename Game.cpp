@@ -720,6 +720,7 @@ void Game::update(sf::Time elapsedTime)
 								gameMode = GameMode::ending;
 
 								std::cout << "Game Over !" << std::endl;
+								stopAnimation();
 
 								// Draw Game Over
 
@@ -778,6 +779,8 @@ void Game::update(sf::Time elapsedTime)
 						{
 							changeOrientation(entity);
 						}
+
+						stopAnimation();
 
 						// Draw Victory
 
