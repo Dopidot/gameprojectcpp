@@ -7,7 +7,7 @@
 #define BLOCK_SPACE 110.f
 #define JUMP_HEIGHT 50
 #define GOD_TIME_IN_SEC 3
-#define HEALTH_POINTS 5
+#define MAX_HEALTH_POINTS 10
 #define PIECE_COUNT 7
 
 enum GameMode
@@ -75,7 +75,7 @@ private:
 	sf::Texture	_TexturePeach;
 	sf::Sprite	_Peach;
 	sf::Texture	_TextureHeart;
-	sf::Sprite	_Heart[HEALTH_POINTS];
+	sf::Sprite	_Heart[MAX_HEALTH_POINTS];
 	sf::Texture	_TextureLogo;
 	sf::Sprite	_Logo;
 	sf::Texture	_TextureButtonNew;

@@ -18,10 +18,13 @@ bool isVictory = false;
 JumpAction jumpMario;
 int positionYBlocks[BLOCK_COUNT_Y];
 
-int healthPoints = HEALTH_POINTS;
-int godTimeInSec = 0;
-int score;
+int jumpHeight = JUMP_HEIGHT;
+int invulnerabilityTimeInSec = GOD_TIME_IN_SEC;
+int playerGodTimeInSec = 0;
+int totalHealthPoints = MAX_HEALTH_POINTS;
+int healthPoints = totalHealthPoints;
 
+int score;
 bool isClimbingLadder = false;
 
 sf::Clock clockAnimation;
@@ -131,6 +134,105 @@ void moveCursorMenu()
 	}
 }
 
+void readConfigurationFile(FILE * configFile, const std::string filename)
+{
+	fclose(configFile);
+
+	fopen_s(&configFile, filename.c_str(), "r");
+
+	if (configFile)
+	{
+		char szBuffer[2048];
+		std::string line;
+
+		while (fgets(szBuffer, 2048, configFile))
+		{
+			line = szBuffer;
+
+			if (line.find("jump_height=") != std::string::npos)
+			{
+				std::size_t index = line.find("=");
+				int length = line.length() - 1;
+
+				if (index < length)
+				{
+					index++;
+
+					std::string temp = line.substr(index, length);
+					int newValue = std::stoi(temp);
+
+					if (newValue >= 0 && newValue <= 60)
+					{
+						jumpHeight = newValue;
+					}
+
+				}
+			}
+			else if (line.find("invulnerability_time=") != std::string::npos)
+			{
+				std::size_t index = line.find("=");
+				int length = line.length() - 1;
+
+				if (index < length)
+				{
+					index++;
+
+					std::string temp = line.substr(index, length);
+					int newValue = std::stoi(temp);
+
+					if (newValue >= 0)
+					{
+						invulnerabilityTimeInSec = newValue;
+					}
+
+				}
+			}
+			else if (line.find("set_god_mode=") != std::string::npos)
+			{
+				std::size_t index = line.find("=");
+				int length = line.length() - 1;
+
+				if (index < length)
+				{
+					index++;
+
+					std::string temp = line.substr(index, length);
+					int newValue = std::stoi(temp);
+
+					if (newValue == 1)
+					{
+						playerGodTimeInSec = -1;
+					}
+				}
+			}
+			else if (line.find("health_points=") != std::string::npos)
+			{
+				std::size_t index = line.find("=");
+				int length = line.length() - 1;
+
+				if (index < length)
+				{
+					index++;
+
+					std::string temp = line.substr(index, length);
+					int newValue = std::stoi(temp);
+
+					if (newValue >= 1 && newValue <= 10)
+					{
+						totalHealthPoints = newValue;
+					}
+
+				}
+			}
+
+		}
+
+
+		fclose(configFile);
+	}
+
+}
+
 
 Game::Game()
 	: mWindow(sf::VideoMode(screenResolution.x, screenResolution.y), "Donkey Kong 1981", sf::Style::Close)
@@ -148,6 +250,46 @@ Game::Game()
 {
 	mWindow.setFramerateLimit(160);
 	eng.seed(time(0));
+	
+	
+
+	std::string filename = "Donkey_kong.properties";
+	FILE* configFile;
+
+	fopen_s(&configFile, filename.c_str(), "r");
+
+	if (!configFile)
+	{
+		std::cout << "Configuration file not found." << std::endl;
+
+		fopen_s(&configFile, filename.c_str(), "w");
+
+		if (!configFile) 
+		{
+			std::perror("Error : unable to create configuration file.");
+		}
+		else
+		{
+			std::cout << "New configuration file created !" << std::endl;
+
+			fprintf(configFile, "# Donkey kong properties\n");
+			fprintf(configFile, "# Height of the jump. Min = 0, Max = 60\n");
+			fprintf(configFile, "jump_height=50\n");
+			fprintf(configFile, "\n");
+			fprintf(configFile, "# Invulnerability time in sec when Mario collides with an enemy. Min = 0\n");
+			fprintf(configFile, "invulnerability_time=3\n");
+			fprintf(configFile, "\n");
+			fprintf(configFile, "# Change to god mode. Min = 0, Max = 1\n");
+			fprintf(configFile, "set_god_mode=0\n");
+			fprintf(configFile, "\n");
+			fprintf(configFile, "# Number of health points. Min = 1, Max = 10\n");
+			fprintf(configFile, "health_points=5\n");
+
+			fclose(configFile);
+		}
+	}
+	
+	readConfigurationFile(configFile, filename);
 	
 
 
@@ -320,7 +462,7 @@ void Game::update(sf::Time elapsedTime)
 	}
 	else if (gameMode == GameMode::initializeGame)
 	{
-		healthPoints = HEALTH_POINTS;
+		healthPoints = totalHealthPoints;
 
 		// Draw blocks
 
@@ -455,6 +597,7 @@ void Game::update(sf::Time elapsedTime)
 		sf::Vector2f posPeach;
 		posPeach.x = eng() % (700 - 170) + 170;
 		posPeach.y = BLOCK_SPACE - _sizePeach.y;
+
 		_Peach.setPosition(posPeach);
 
 		std::shared_ptr<Entity> peach = std::make_shared<Entity>();
@@ -658,7 +801,7 @@ void Game::update(sf::Time elapsedTime)
 				{
 					if (jumpMario.state == JumpState::toTheTop)
 					{
-						if (entity->m_sprite.getPosition().y > (jumpMario.initialPosY - JUMP_HEIGHT))
+						if (entity->m_sprite.getPosition().y > (jumpMario.initialPosY - jumpHeight))
 						{
 							movement.y -= PlayerSpeed;
 							entity->m_sprite.move(movement * elapsedTime.asSeconds());
@@ -687,61 +830,59 @@ void Game::update(sf::Time elapsedTime)
 
 			if (entity->m_type == EntityType::ennemi)
 			{
-				if (godTimeInSec == 0)
+				if (collision.isCollision(player->m_sprite, entity->m_sprite, 0, 5))
 				{
-					if (collision.isCollision(player->m_sprite, entity->m_sprite, 0, 5))
+					if (jumpMario.state == JumpState::toTheBottom)
 					{
-						if (jumpMario.state == JumpState::toTheBottom)
-						{
-							entity->m_enabled = false;
+						entity->m_enabled = false;
 
-							score += 50;
+						score += 50;
+						mScore.setString("Score : " + toString(score));
+
+						jumpMario.state = JumpState::toTheTop;
+					}
+					else if (healthPoints > 0 && playerGodTimeInSec == 0)
+					{
+						healthPoints--;
+						playerGodTimeInSec = invulnerabilityTimeInSec;
+
+						std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
+
+						EntityManager::DisableOneHeart(healthPoints);
+
+						if (score > 0)
+						{
+							score -= 50;
 							mScore.setString("Score : " + toString(score));
-
-							jumpMario.state = JumpState::toTheTop;
 						}
-						else if (healthPoints > 0)
+
+						if (healthPoints == 0)
 						{
-							healthPoints--;
-							godTimeInSec = GOD_TIME_IN_SEC;
+							gameMode = GameMode::ending;
 
-							std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
+							std::cout << "Game Over !" << std::endl;
+							stopAnimation();
 
-							EntityManager::DisableOneHeart(healthPoints);
+							// Draw Game Over
 
-							if (score > 0)
-							{
-								score -= 50;
-								mScore.setString("Score : " + toString(score));
-							}
+							_TextureGameOver.loadFromFile("Media/Textures/Game_over_small.png");
+							_sizeGameOver = _TextureGameOver.getSize();
+							_GameOver.setTexture(_TextureGameOver);
 
-							if (healthPoints == 0)
-							{
-								gameMode = GameMode::ending;
+							_GameOver.setPosition((screenResolution.x / 2) - (_sizeGameOver.x / 2), (screenResolution.y / 2) - (_sizeGameOver.y / 2));
 
-								std::cout << "Game Over !" << std::endl;
-								stopAnimation();
+							std::shared_ptr<Entity> gameOver = std::make_shared<Entity>();
+							gameOver->m_sprite = _GameOver;
+							gameOver->m_type = EntityType::endScreen;
+							gameOver->m_size = _TextureGameOver.getSize();
+							gameOver->m_position = _GameOver.getPosition();
+							EntityManager::m_Entities.push_back(gameOver);
 
-								// Draw Game Over
-
-								_TextureGameOver.loadFromFile("Media/Textures/Game_over_small.png");
-								_sizeGameOver = _TextureGameOver.getSize();
-								_GameOver.setTexture(_TextureGameOver);
-
-								_GameOver.setPosition((screenResolution.x / 2) - (_sizeGameOver.x / 2), (screenResolution.y / 2) - (_sizeGameOver.y / 2));
-
-								std::shared_ptr<Entity> gameOver = std::make_shared<Entity>();
-								gameOver->m_sprite = _GameOver;
-								gameOver->m_type = EntityType::endScreen;
-								gameOver->m_size = _TextureGameOver.getSize();
-								gameOver->m_position = _GameOver.getPosition();
-								EntityManager::m_Entities.push_back(gameOver);
-
-								clockEndGame.restart();
-							}
+							clockEndGame.restart();
 						}
 					}
 				}
+
 
 
 				if (entity->m_sprite.getPosition().x >= 660.f + _sizeBlock.x - _sizeEnnemi.x)
@@ -765,54 +906,60 @@ void Game::update(sf::Time elapsedTime)
 			{
 				if (!isVictory && collision.isCollision(player->m_sprite, entity->m_sprite))
 				{
-					if (clockEndGame.getElapsedTime().asSeconds() >= 3.0f)
+					int peachPosY = entity->m_sprite.getPosition().y;
+					int marioPosY = player->m_sprite.getPosition().y - abs(entity->m_sprite.getLocalBounds().height - player->m_sprite.getLocalBounds().height);
+
+					if (marioPosY <= peachPosY)
 					{
-						std::cout << "You Win !" << std::endl;
-						isVictory = true;
-						gameMode = GameMode::ending;
-
-						if (player->m_sprite.getPosition().x < entity->m_sprite.getPosition().x)
+						if (clockEndGame.getElapsedTime().asSeconds() >= 3.0f)
 						{
-							changeOrientation(entity, true);
+							std::cout << "You Win !" << std::endl;
+							isVictory = true;
+							gameMode = GameMode::ending;
+
+							if (player->m_sprite.getPosition().x < entity->m_sprite.getPosition().x)
+							{
+								changeOrientation(entity, true);
+							}
+							else
+							{
+								changeOrientation(entity);
+							}
+
+							stopAnimation();
+
+							// Draw Victory
+
+							_TextureVictory.loadFromFile("Media/Textures/Victory_small.png");
+							_sizeVictory = _TextureVictory.getSize();
+							_Victory.setTexture(_TextureVictory);
+
+							_Victory.setPosition((screenResolution.x / 2) - (_sizeVictory.x / 2), (screenResolution.y / 2) - (_sizeVictory.y / 2));
+
+							std::shared_ptr<Entity> victory = std::make_shared<Entity>();
+							victory->m_sprite = _Victory;
+							victory->m_type = EntityType::endScreen;
+							victory->m_size = _TextureVictory.getSize();
+							victory->m_position = _Victory.getPosition();
+							EntityManager::m_Entities.push_back(victory);
+
+
+
+							// Draw Love
+
+							_Love.setTexture(_TextureHeart);
+							_Love.setPosition(entity->m_sprite.getPosition().x, _sizeHeart.y * 1);
+
+							std::shared_ptr<Entity> love = std::make_shared<Entity>();
+							love->m_sprite = _Love;
+							love->m_type = EntityType::endScreen;
+							love->m_size = _TextureHeart.getSize();
+							love->m_position = _Love.getPosition();
+							EntityManager::m_Entities.push_back(love);
+
+
+							clockEndGame.restart();
 						}
-						else
-						{
-							changeOrientation(entity);
-						}
-
-						stopAnimation();
-
-						// Draw Victory
-
-						_TextureVictory.loadFromFile("Media/Textures/Victory_small.png");
-						_sizeVictory = _TextureVictory.getSize();
-						_Victory.setTexture(_TextureVictory);
-
-						_Victory.setPosition((screenResolution.x / 2) - (_sizeVictory.x / 2), (screenResolution.y / 2) - (_sizeVictory.y / 2));
-
-						std::shared_ptr<Entity> victory = std::make_shared<Entity>();
-						victory->m_sprite = _Victory;
-						victory->m_type = EntityType::endScreen;
-						victory->m_size = _TextureVictory.getSize();
-						victory->m_position = _Victory.getPosition();
-						EntityManager::m_Entities.push_back(victory);
-
-
-
-						// Draw Love
-
-						_Love.setTexture(_TextureHeart);
-						_Love.setPosition(entity->m_sprite.getPosition().x, _sizeHeart.y * 1);
-
-						std::shared_ptr<Entity> love = std::make_shared<Entity>();
-						love->m_sprite = _Love;
-						love->m_type = EntityType::endScreen;
-						love->m_size = _TextureHeart.getSize();
-						love->m_position = _Love.getPosition();
-						EntityManager::m_Entities.push_back(love);
-
-						
-						clockEndGame.restart();
 					}
 				}
 			}
@@ -921,9 +1068,9 @@ void Game::updateStatistics(sf::Time elapsedTime)
 		mStatisticsUpdateTime -= sf::seconds(1.0f);
 		mStatisticsNumFrames = 0;
 
-		if (godTimeInSec > 0)
+		if (playerGodTimeInSec > 0)
 		{
-			godTimeInSec--;
+			playerGodTimeInSec--;
 		}
 
 	}
