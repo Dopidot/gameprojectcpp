@@ -1,5 +1,7 @@
 #pragma once
 
+#include "EntityManager.h"
+
 enum JumpState
 {
 	notActivated,
@@ -18,5 +20,8 @@ class Player
 public:
 	Player();
 	~Player();
+
+public:
+	std::shared_ptr<Entity> entity;
 };
 

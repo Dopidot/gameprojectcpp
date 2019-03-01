@@ -1,13 +1,12 @@
 #pragma once
 
+#include "Configuration.h"
+
 #define LADDER_COUNT 4
 #define ENNEMI_COUNT 6
 #define BLOCK_COUNT_X 8
 #define BLOCK_COUNT_Y 5
 #define BLOCK_SPACE 110.f
-#define JUMP_HEIGHT 50
-#define GOD_TIME_IN_SEC 3
-#define MAX_HEALTH_POINTS 10
 #define PIECE_COUNT 7
 
 enum GameMode

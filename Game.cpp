@@ -4,10 +4,19 @@
 #include "EntityManager.h"
 #include "CollisionManager.h"
 #include "Player.h"
+#include "Configuration.h"
+#include "Animation.h"
 
 const float Game::PlayerSpeed = 100.f;
 const sf::Time Game::TimePerFrame = sf::seconds(1.f / 60.f);
 const sf::Vector2i screenResolution(840, 600);
+
+Configuration params;
+Player mPlayer;
+Animation animation;
+
+
+
 
 CollisionManager collision;
 std::default_random_engine eng;
@@ -18,11 +27,7 @@ bool isVictory = false;
 JumpAction jumpMario;
 int positionYBlocks[BLOCK_COUNT_Y];
 
-int jumpHeight = JUMP_HEIGHT;
-int invulnerabilityTimeInSec = GOD_TIME_IN_SEC;
-int playerGodTimeInSec = 0;
-int totalHealthPoints = MAX_HEALTH_POINTS;
-int healthPoints = totalHealthPoints;
+int healthPoints = params.totalHealthPoints;
 
 int score;
 bool isClimbingLadder = false;
@@ -46,56 +51,11 @@ float getNearestFloor(float actualPosY, int sizeYMario)
 	return positionYBlocks[BLOCK_COUNT_Y - 1] - sizeYMario;
 }
 
-void changeOrientation(std::shared_ptr<Entity> entity, bool isLeftSide = false)
-{
-	if (isLeftSide)
-	{
-		if (entity->m_sprite.getScale().x == 1)
-		{
-			entity->m_sprite.setOrigin(entity->m_sprite.getLocalBounds().width, 0);
-			entity->m_sprite.setScale(-1, 1);
-		}
-	}
-	else if (entity->m_sprite.getScale().x == -1)
-	{
-		entity->m_sprite.setOrigin(0, 0);
-		entity->m_sprite.setScale(1, 1);
-	}
-}
 
-void startAnimation(bool isLeftSide = false)
-{
-	std::shared_ptr<Entity> player;
-	player = EntityManager::GetPlayer();
 
-	sf::IntRect rectSourceSprite;
 
-	if (player->m_sprite.getTextureRect().left == 35)
-	{
-		rectSourceSprite = sf::IntRect(77, 0, 28, 40);
-	}
-	else
-	{
-		rectSourceSprite = sf::IntRect(35, 0, 38, 40);
-	}
 
-	player->m_sprite.setTextureRect(rectSourceSprite);
 
-	changeOrientation(player, isLeftSide);
-
-	clockAnimation.restart();
-}
-
-void stopAnimation()
-{
-	std::shared_ptr<Entity> player;
-	player = EntityManager::GetPlayer();
-
-	sf::IntRect rectSourceSprite(0, 0, 31, 40);
-	player->m_sprite.setTextureRect(rectSourceSprite);
-
-	clockAnimation.restart();
-}
 
 void moveCursorMenu()
 {
@@ -134,104 +94,7 @@ void moveCursorMenu()
 	}
 }
 
-void readConfigurationFile(FILE * configFile, const std::string filename)
-{
-	fclose(configFile);
 
-	fopen_s(&configFile, filename.c_str(), "r");
-
-	if (configFile)
-	{
-		char szBuffer[2048];
-		std::string line;
-
-		while (fgets(szBuffer, 2048, configFile))
-		{
-			line = szBuffer;
-
-			if (line.find("jump_height=") != std::string::npos)
-			{
-				std::size_t index = line.find("=");
-				int length = line.length() - 1;
-
-				if (index < length)
-				{
-					index++;
-
-					std::string temp = line.substr(index, length);
-					int newValue = std::stoi(temp);
-
-					if (newValue >= 0 && newValue <= 60)
-					{
-						jumpHeight = newValue;
-					}
-
-				}
-			}
-			else if (line.find("invulnerability_time=") != std::string::npos)
-			{
-				std::size_t index = line.find("=");
-				int length = line.length() - 1;
-
-				if (index < length)
-				{
-					index++;
-
-					std::string temp = line.substr(index, length);
-					int newValue = std::stoi(temp);
-
-					if (newValue >= 0)
-					{
-						invulnerabilityTimeInSec = newValue;
-					}
-
-				}
-			}
-			else if (line.find("set_god_mode=") != std::string::npos)
-			{
-				std::size_t index = line.find("=");
-				int length = line.length() - 1;
-
-				if (index < length)
-				{
-					index++;
-
-					std::string temp = line.substr(index, length);
-					int newValue = std::stoi(temp);
-
-					if (newValue == 1)
-					{
-						playerGodTimeInSec = -1;
-					}
-				}
-			}
-			else if (line.find("health_points=") != std::string::npos)
-			{
-				std::size_t index = line.find("=");
-				int length = line.length() - 1;
-
-				if (index < length)
-				{
-					index++;
-
-					std::string temp = line.substr(index, length);
-					int newValue = std::stoi(temp);
-
-					if (newValue >= 1 && newValue <= 10)
-					{
-						totalHealthPoints = newValue;
-					}
-
-				}
-			}
-
-		}
-
-
-		fclose(configFile);
-	}
-
-}
 
 
 Game::Game()
@@ -250,46 +113,8 @@ Game::Game()
 {
 	mWindow.setFramerateLimit(160);
 	eng.seed(time(0));
-	
-	
 
-	std::string filename = "Donkey_kong.properties";
-	FILE* configFile;
-
-	fopen_s(&configFile, filename.c_str(), "r");
-
-	if (!configFile)
-	{
-		std::cout << "Configuration file not found." << std::endl;
-
-		fopen_s(&configFile, filename.c_str(), "w");
-
-		if (!configFile) 
-		{
-			std::perror("Error : unable to create configuration file.");
-		}
-		else
-		{
-			std::cout << "New configuration file created !" << std::endl;
-
-			fprintf(configFile, "# Donkey kong properties\n");
-			fprintf(configFile, "# Height of the jump. Min = 0, Max = 60\n");
-			fprintf(configFile, "jump_height=50\n");
-			fprintf(configFile, "\n");
-			fprintf(configFile, "# Invulnerability time in sec when Mario collides with an enemy. Min = 0\n");
-			fprintf(configFile, "invulnerability_time=3\n");
-			fprintf(configFile, "\n");
-			fprintf(configFile, "# Change to god mode. Min = 0, Max = 1\n");
-			fprintf(configFile, "set_god_mode=0\n");
-			fprintf(configFile, "\n");
-			fprintf(configFile, "# Number of health points. Min = 1, Max = 10\n");
-			fprintf(configFile, "health_points=5\n");
-
-			fclose(configFile);
-		}
-	}
-	
-	readConfigurationFile(configFile, filename);
+	params.readConfigurationFile();
 	
 
 
@@ -462,7 +287,7 @@ void Game::update(sf::Time elapsedTime)
 	}
 	else if (gameMode == GameMode::initializeGame)
 	{
-		healthPoints = totalHealthPoints;
+		healthPoints = params.totalHealthPoints;
 
 		// Draw blocks
 
@@ -735,11 +560,11 @@ void Game::update(sf::Time elapsedTime)
 
 				if (jumpMario.state != JumpState::notActivated)
 				{
-					changeOrientation(player, true);
+					animation.changeOrientation(player->m_sprite, true);
 				}
 				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
-					startAnimation(true);
+					animation.startAnimation(player->m_sprite, &clockAnimation, true);
 				}
 
 			}
@@ -754,11 +579,11 @@ void Game::update(sf::Time elapsedTime)
 
 				if (jumpMario.state != JumpState::notActivated)
 				{
-					changeOrientation(player);
+					animation.changeOrientation(player->m_sprite);
 				}
 				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
 				{
-					startAnimation();
+					animation.startAnimation(player->m_sprite, &clockAnimation);
 				}
 			}
 		}
@@ -775,7 +600,7 @@ void Game::update(sf::Time elapsedTime)
 
 		if ((!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight) || jumpMario.state != JumpState::notActivated || isClimbingLadder)
 		{
-			stopAnimation();
+			animation.stopAnimation(player->m_sprite, &clockAnimation);
 		}
 
 		int ennemiIndex = 0;
@@ -801,7 +626,7 @@ void Game::update(sf::Time elapsedTime)
 				{
 					if (jumpMario.state == JumpState::toTheTop)
 					{
-						if (entity->m_sprite.getPosition().y > (jumpMario.initialPosY - jumpHeight))
+						if (entity->m_sprite.getPosition().y > (jumpMario.initialPosY - params.jumpHeight))
 						{
 							movement.y -= PlayerSpeed;
 							entity->m_sprite.move(movement * elapsedTime.asSeconds());
@@ -841,10 +666,10 @@ void Game::update(sf::Time elapsedTime)
 
 						jumpMario.state = JumpState::toTheTop;
 					}
-					else if (healthPoints > 0 && playerGodTimeInSec == 0)
+					else if (healthPoints > 0 && params.playerGodTimeInSec == 0)
 					{
 						healthPoints--;
-						playerGodTimeInSec = invulnerabilityTimeInSec;
+						params.playerGodTimeInSec = params.invulnerabilityTimeInSec;
 
 						std::cout << "Hit ! Health remaining : " << healthPoints << std::endl;
 
@@ -861,7 +686,7 @@ void Game::update(sf::Time elapsedTime)
 							gameMode = GameMode::ending;
 
 							std::cout << "Game Over !" << std::endl;
-							stopAnimation();
+							animation.stopAnimation(player->m_sprite, &clockAnimation);
 
 							// Draw Game Over
 
@@ -919,14 +744,14 @@ void Game::update(sf::Time elapsedTime)
 
 							if (player->m_sprite.getPosition().x < entity->m_sprite.getPosition().x)
 							{
-								changeOrientation(entity, true);
+								animation.changeOrientation(entity->m_sprite, true);
 							}
 							else
 							{
-								changeOrientation(entity);
+								animation.changeOrientation(entity->m_sprite);
 							}
 
-							stopAnimation();
+							animation.stopAnimation(player->m_sprite, &clockAnimation);
 
 							// Draw Victory
 
@@ -1068,9 +893,9 @@ void Game::updateStatistics(sf::Time elapsedTime)
 		mStatisticsUpdateTime -= sf::seconds(1.0f);
 		mStatisticsNumFrames = 0;
 
-		if (playerGodTimeInSec > 0)
+		if (params.playerGodTimeInSec > 0)
 		{
-			playerGodTimeInSec--;
+			params.playerGodTimeInSec--;
 		}
 
 	}
