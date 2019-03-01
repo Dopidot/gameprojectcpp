@@ -17,7 +17,6 @@ Animation animation;
 
 
 
-
 CollisionManager collision;
 std::default_random_engine eng;
 int gameMode = GameMode::initializeMenu;
@@ -32,10 +31,8 @@ int healthPoints = params.totalHealthPoints;
 int score;
 bool isClimbingLadder = false;
 
-sf::Clock clockAnimation;
 sf::Clock clockCursor;
 sf::Clock clockEndGame;
-
 
 
 float getNearestFloor(float actualPosY, int sizeYMario)
@@ -50,11 +47,6 @@ float getNearestFloor(float actualPosY, int sizeYMario)
 
 	return positionYBlocks[BLOCK_COUNT_Y - 1] - sizeYMario;
 }
-
-
-
-
-
 
 
 void moveCursorMenu()
@@ -562,9 +554,9 @@ void Game::update(sf::Time elapsedTime)
 				{
 					animation.changeOrientation(player->m_sprite, true);
 				}
-				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
+				else if (animation.clock.getElapsedTime().asSeconds() >= 0.15f)
 				{
-					animation.startAnimation(player->m_sprite, &clockAnimation, true);
+					animation.startAnimation(player->m_sprite, true);
 				}
 
 			}
@@ -581,9 +573,9 @@ void Game::update(sf::Time elapsedTime)
 				{
 					animation.changeOrientation(player->m_sprite);
 				}
-				else if (clockAnimation.getElapsedTime().asSeconds() >= 0.15f)
+				else if (animation.clock.getElapsedTime().asSeconds() >= 0.15f)
 				{
-					animation.startAnimation(player->m_sprite, &clockAnimation);
+					animation.startAnimation(player->m_sprite);
 				}
 			}
 		}
@@ -600,7 +592,7 @@ void Game::update(sf::Time elapsedTime)
 
 		if ((!mIsMovingUp && !mIsMovingDown && !mIsMovingLeft && !mIsMovingRight) || jumpMario.state != JumpState::notActivated || isClimbingLadder)
 		{
-			animation.stopAnimation(player->m_sprite, &clockAnimation);
+			animation.stopAnimation(player->m_sprite);
 		}
 
 		int ennemiIndex = 0;
@@ -686,7 +678,7 @@ void Game::update(sf::Time elapsedTime)
 							gameMode = GameMode::ending;
 
 							std::cout << "Game Over !" << std::endl;
-							animation.stopAnimation(player->m_sprite, &clockAnimation);
+							animation.stopAnimation(player->m_sprite);
 
 							// Draw Game Over
 
@@ -751,7 +743,7 @@ void Game::update(sf::Time elapsedTime)
 								animation.changeOrientation(entity->m_sprite);
 							}
 
-							animation.stopAnimation(player->m_sprite, &clockAnimation);
+							animation.stopAnimation(player->m_sprite);
 
 							// Draw Victory
 

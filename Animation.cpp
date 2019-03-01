@@ -30,7 +30,7 @@ void Animation::changeOrientation(sf::Sprite &sprite, bool isLeftSide)
 	}
 }
 
-void Animation::startAnimation(sf::Sprite &sprite, sf::Clock *clock, bool isLeftSide)
+void Animation::startAnimation(sf::Sprite &sprite, bool isLeftSide)
 {
 	sf::IntRect rectSourceSprite;
 
@@ -47,13 +47,13 @@ void Animation::startAnimation(sf::Sprite &sprite, sf::Clock *clock, bool isLeft
 
 	changeOrientation(sprite, isLeftSide);
 
-	clock->restart();
+	clock.restart();
 }
 
-void Animation::stopAnimation(sf::Sprite &sprite, sf::Clock *clock)
+void Animation::stopAnimation(sf::Sprite &sprite)
 {
 	sf::IntRect rectSourceSprite(0, 0, 31, 40);
 	sprite.setTextureRect(rectSourceSprite);
 
-	clock->restart();
+	clock.restart();
 }
